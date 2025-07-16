@@ -4,7 +4,8 @@ import 'hijri_date.dart';
 /// Uses astronomical calculations based on the Umm al-Qura calendar system.
 class HijriConverter {
   // Epoch constants
-  static const int _hijriEpoch = 1948440; // Julian day of Hijri epoch (16 July 622 CE)
+  static const int _hijriEpoch =
+      1948440; // Julian day of Hijri epoch (16 July 622 CE)
 
   /// Converts a Gregorian DateTime to HijriDate
   static HijriDate gregorianToHijri(DateTime gregorianDate) {
@@ -34,7 +35,9 @@ class HijriConverter {
 
     return (365.25 * (year + 4716)).floor() +
         (30.6001 * (month + 1)).floor() +
-        day + b - 1524;
+        day +
+        b -
+        1524;
   }
 
   /// Converts Julian day number to Gregorian date
@@ -93,11 +96,7 @@ class HijriConverter {
       remainingDays = 1;
     }
 
-    return HijriDate(
-      day: remainingDays,
-      month: month,
-      year: year,
-    );
+    return HijriDate(day: remainingDays, month: month, year: year);
   }
 
   /// Converts Hijri date to Julian day number

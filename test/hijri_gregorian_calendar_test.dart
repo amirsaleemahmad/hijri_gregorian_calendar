@@ -33,15 +33,27 @@ void main() {
       final convertedBackDate = HijriGregConverter.hijriToGregorian(hijriDate);
 
       // Should be within 1 day due to calendar system differences
-      final difference = originalDate.difference(convertedBackDate).inDays.abs();
+      final difference = originalDate
+          .difference(convertedBackDate)
+          .inDays
+          .abs();
       expect(difference, lessThanOrEqualTo(1));
     });
 
     test('Hijri month lengths', () {
       // Test that month lengths are correct
-      expect(HijriGregConverter.getHijriMonthLength(1445, 1), 30); // Muharram has 30 days
-      expect(HijriGregConverter.getHijriMonthLength(1445, 2), 29); // Safar has 29 days
-      expect(HijriGregConverter.getHijriMonthLength(1445, 3), 30); // Rabi' al-awwal has 30 days
+      expect(
+        HijriGregConverter.getHijriMonthLength(1445, 1),
+        30,
+      ); // Muharram has 30 days
+      expect(
+        HijriGregConverter.getHijriMonthLength(1445, 2),
+        29,
+      ); // Safar has 29 days
+      expect(
+        HijriGregConverter.getHijriMonthLength(1445, 3),
+        30,
+      ); // Rabi' al-awwal has 30 days
     });
 
     test('Hijri leap year detection', () {
@@ -106,15 +118,36 @@ void main() {
 
     test('HijriGregDate validation', () {
       // Valid dates should work
-      expect(() => HijriGregDate(day: 1, month: 1, year: 1445), returnsNormally);
-      expect(() => HijriGregDate(day: 30, month: 12, year: 1445), returnsNormally);
+      expect(
+        () => HijriGregDate(day: 1, month: 1, year: 1445),
+        returnsNormally,
+      );
+      expect(
+        () => HijriGregDate(day: 30, month: 12, year: 1445),
+        returnsNormally,
+      );
 
       // Invalid dates should throw assertions
-      expect(() => HijriGregDate(day: 0, month: 1, year: 1445), throwsAssertionError);
-      expect(() => HijriGregDate(day: 31, month: 1, year: 1445), throwsAssertionError);
-      expect(() => HijriGregDate(day: 1, month: 0, year: 1445), throwsAssertionError);
-      expect(() => HijriGregDate(day: 1, month: 13, year: 1445), throwsAssertionError);
-      expect(() => HijriGregDate(day: 1, month: 1, year: 0), throwsAssertionError);
+      expect(
+        () => HijriGregDate(day: 0, month: 1, year: 1445),
+        throwsAssertionError,
+      );
+      expect(
+        () => HijriGregDate(day: 31, month: 1, year: 1445),
+        throwsAssertionError,
+      );
+      expect(
+        () => HijriGregDate(day: 1, month: 0, year: 1445),
+        throwsAssertionError,
+      );
+      expect(
+        () => HijriGregDate(day: 1, month: 13, year: 1445),
+        throwsAssertionError,
+      );
+      expect(
+        () => HijriGregDate(day: 1, month: 1, year: 0),
+        throwsAssertionError,
+      );
     });
   });
 }

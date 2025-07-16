@@ -60,10 +60,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 children: [
                   Text(
                     'Current Calendar Type',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.blue.shade700,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.blue.shade700),
                   ),
                   SizedBox(height: 8),
                   Text(
@@ -103,8 +100,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     children: [
                       Text(
                         showGregorian
-                          ? selectedDate.day.toString()
-                          : hijriDate.day.toString(),
+                            ? selectedDate.day.toString()
+                            : hijriDate.day.toString(),
                         style: TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
@@ -113,8 +110,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                       Text(
                         showGregorian
-                          ? _getGregorianMonthName(selectedDate.month)
-                          : hijriDate.monthNameEnglish,
+                            ? _getGregorianMonthName(selectedDate.month)
+                            : hijriDate.monthNameEnglish,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w500,
@@ -123,8 +120,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ),
                       Text(
                         showGregorian
-                          ? selectedDate.year.toString()
-                          : hijriDate.year.toString(),
+                            ? selectedDate.year.toString()
+                            : hijriDate.year.toString(),
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w500,
@@ -145,7 +142,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   Column(
                     children: [
                       Text(
-                        showGregorian ? 'Hijri Equivalent' : 'Gregorian Equivalent',
+                        showGregorian
+                            ? 'Hijri Equivalent'
+                            : 'Gregorian Equivalent',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade600,
@@ -154,8 +153,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       SizedBox(height: 8),
                       Text(
                         showGregorian
-                          ? hijriDate.format()
-                          : _formatGregorianDate(selectedDate),
+                            ? hijriDate.format()
+                            : _formatGregorianDate(selectedDate),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
@@ -182,7 +181,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     });
                   },
                   icon: Icon(Icons.swap_horiz),
-                  label: Text('Switch to ${showGregorian ? 'Hijri' : 'Gregorian'}'),
+                  label: Text(
+                    'Switch to ${showGregorian ? 'Hijri' : 'Gregorian'}',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
@@ -221,10 +222,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               },
               child: Text(
                 'Go to Today',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.blue.shade700,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.blue.shade700),
               ),
             ),
           ],
@@ -235,8 +233,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   String _getGregorianMonthName(int month) {
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return monthNames[month - 1];
   }

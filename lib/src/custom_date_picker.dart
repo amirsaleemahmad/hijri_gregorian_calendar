@@ -62,7 +62,8 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
     List<int> currentWeek = List.filled(7, 0);
 
     int day = 1;
-    for (int i = 0; i < 6; i++) { // 6 weeks max
+    for (int i = 0; i < 6; i++) {
+      // 6 weeks max
       for (int j = 0; j < 7; j++) {
         if (i == 0 && j < startingWeekday) {
           // Days from previous month
@@ -86,11 +87,14 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
 
   void _generateHijriCalendar() {
     // Get the number of days in the current Hijri month
-    int daysInMonth = HijriConverter.getHijriMonthLength(_currentYear, _currentMonth);
+    int daysInMonth = HijriConverter.getHijriMonthLength(
+      _currentYear,
+      _currentMonth,
+    );
 
     // Calculate which day of the week the first day falls on
     final firstDayGregorian = HijriConverter.hijriToGregorian(
-      HijriDate(day: 1, month: _currentMonth, year: _currentYear)
+      HijriDate(day: 1, month: _currentMonth, year: _currentYear),
     );
     int startingWeekday = firstDayGregorian.weekday % 7;
 
@@ -98,7 +102,8 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
     List<int> currentWeek = List.filled(7, 0);
 
     int day = 1;
-    for (int i = 0; i < 6; i++) { // 6 weeks max
+    for (int i = 0; i < 6; i++) {
+      // 6 weeks max
       for (int j = 0; j < 7; j++) {
         if (i == 0 && j < startingWeekday) {
           // Days from previous month
@@ -151,7 +156,11 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         newDate = DateTime(_currentYear, _currentMonth, day);
       } else {
         // Convert Hijri date to Gregorian
-        final hijriDate = HijriDate(day: day, month: _currentMonth, year: _currentYear);
+        final hijriDate = HijriDate(
+          day: day,
+          month: _currentMonth,
+          year: _currentYear,
+        );
         newDate = HijriConverter.hijriToGregorian(hijriDate);
       }
 
@@ -164,8 +173,18 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
   String _getCurrentMonthName() {
     if (_isGregorian) {
       const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
       ];
       return monthNames[_currentMonth - 1];
     } else {
@@ -242,18 +261,20 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
               // Day headers
               TableRow(
                 children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-                    .map((day) => Container(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Center(
-                            child: Text(
-                              day,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade700,
-                              ),
+                    .map(
+                      (day) => Container(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Center(
+                          child: Text(
+                            day,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade700,
                             ),
                           ),
-                        ))
+                        ),
+                      ),
+                    )
                     .toList(),
               ),
 
@@ -268,12 +289,16 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                     if (day != 0) {
                       if (_isGregorian) {
                         final today = DateTime.now();
-                        isToday = day == today.day &&
+                        isToday =
+                            day == today.day &&
                             _currentMonth == today.month &&
                             _currentYear == today.year;
                       } else {
-                        final todayHijri = HijriConverter.gregorianToHijri(DateTime.now());
-                        isToday = day == todayHijri.day &&
+                        final todayHijri = HijriConverter.gregorianToHijri(
+                          DateTime.now(),
+                        );
+                        isToday =
+                            day == todayHijri.day &&
                             _currentMonth == todayHijri.month &&
                             _currentYear == todayHijri.year;
                       }
@@ -288,8 +313,8 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                           color: isSelected
                               ? Colors.blue
                               : isToday
-                                  ? Colors.blue.shade100
-                                  : Colors.transparent,
+                              ? Colors.blue.shade100
+                              : Colors.transparent,
                           shape: BoxShape.circle,
                           border: isToday && !isSelected
                               ? Border.all(color: Colors.blue, width: 2)
@@ -302,10 +327,10 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                               color: isSelected
                                   ? Colors.white
                                   : isToday
-                                      ? Colors.blue.shade700
-                                      : day == 0
-                                          ? Colors.transparent
-                                          : Colors.black,
+                                  ? Colors.blue.shade700
+                                  : day == 0
+                                  ? Colors.transparent
+                                  : Colors.black,
                               fontWeight: isSelected || isToday
                                   ? FontWeight.bold
                                   : FontWeight.normal,

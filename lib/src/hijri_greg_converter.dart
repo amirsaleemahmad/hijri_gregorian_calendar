@@ -32,7 +32,11 @@ class HijriGregConverter {
     int a = year ~/ 100;
     int b = 2 - a + (a ~/ 4);
 
-    return (365.25 * (year + 4716)).floor() + (30.6001 * (month + 1)).floor() + day + b - 1524;
+    return (365.25 * (year + 4716)).floor() +
+        (30.6001 * (month + 1)).floor() +
+        day +
+        b -
+        1524;
   }
 
   /// Converts Julian day number to Gregorian date
@@ -136,7 +140,20 @@ class HijriGregConverter {
     if (month <= 0 || month > 12) return 30;
 
     // Standard Islamic calendar month lengths
-    const List<int> monthLengths = [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29];
+    const List<int> monthLengths = [
+      30,
+      29,
+      30,
+      29,
+      30,
+      29,
+      30,
+      29,
+      30,
+      29,
+      30,
+      29,
+    ];
 
     int length = monthLengths[month - 1];
 

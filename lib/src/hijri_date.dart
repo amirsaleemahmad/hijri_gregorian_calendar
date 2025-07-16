@@ -1,7 +1,5 @@
 import 'package:hijri_gregorian_calendar/src/hijri_converter.dart';
 
-import '../hijri_gregorian_calendar.dart';
-
 /// Represents a Hijri date with day, month, and year components.
 class HijriDate {
   final int day;
@@ -13,13 +11,10 @@ class HijriDate {
   /// [day] must be between 1 and 30
   /// [month] must be between 1 and 12
   /// [year] must be positive
-  HijriDate({
-    required this.day,
-    required this.month,
-    required this.year,
-  }) : assert(day >= 1 && day <= 30, 'Day must be between 1 and 30'),
-       assert(month >= 1 && month <= 12, 'Month must be between 1 and 12'),
-       assert(year > 0, 'Year must be positive');
+  HijriDate({required this.day, required this.month, required this.year})
+    : assert(day >= 1 && day <= 30, 'Day must be between 1 and 30'),
+      assert(month >= 1 && month <= 12, 'Month must be between 1 and 12'),
+      assert(year > 0, 'Year must be positive');
 
   /// Creates a HijriDate from the current date
   factory HijriDate.now() {
@@ -28,14 +23,34 @@ class HijriDate {
 
   /// Hijri month names in Arabic
   static const List<String> monthNamesArabic = [
-    'محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الثانية',
-    'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'
+    'محرم',
+    'صفر',
+    'ربيع الأول',
+    'ربيع الثاني',
+    'جمادى الأولى',
+    'جمادى الثانية',
+    'رجب',
+    'شعبان',
+    'رمضان',
+    'شوال',
+    'ذو القعدة',
+    'ذو الحجة',
   ];
 
   /// Hijri month names in English
   static const List<String> monthNamesEnglish = [
-    'Muharram', 'Safar', 'Rabi\' al-awwal', 'Rabi\' al-thani', 'Jumada al-awwal', 'Jumada al-thani',
-    'Rajab', 'Sha\'ban', 'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'
+    'Muharram',
+    'Safar',
+    'Rabi\' al-awwal',
+    'Rabi\' al-thani',
+    'Jumada al-awwal',
+    'Jumada al-thani',
+    'Rajab',
+    'Sha\'ban',
+    'Ramadan',
+    'Shawwal',
+    'Dhu al-Qi\'dah',
+    'Dhu al-Hijjah',
   ];
 
   /// Gets the month name in Arabic

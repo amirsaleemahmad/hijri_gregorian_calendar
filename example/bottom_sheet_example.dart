@@ -11,9 +11,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hijri Calendar Bottom Sheet Example',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: ExampleHomePage(),
     );
   }
@@ -192,10 +190,7 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
             // Different ways to use the bottom sheet
             Text(
               'Different Ways to Use the Calendar:',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
             SizedBox(height: 16),

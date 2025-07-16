@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'hijri_greg_date.dart';
 import 'hijri_greg_converter.dart';
-import 'hijri_greg_date_picker.dart';
 
 // Custom scroll physics to remove overscroll glow
 class NoOverscrollPhysics extends ScrollPhysics {
@@ -12,7 +11,6 @@ class NoOverscrollPhysics extends ScrollPhysics {
     return NoOverscrollPhysics(parent: buildParent(ancestor));
   }
 
-  @override
   Widget buildOverscrollIndicator(
     BuildContext context,
     Widget child,
@@ -119,19 +117,18 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
   }
 
   void _initializeControllers() {
-    final hijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
     final int minYear = showGregorian ? 1900 : 1300;
 
     dayController = FixedExtentScrollController(
-      initialItem: showGregorian ? selectedDate.day - 1 : hijriDate.day - 1,
+      initialItem: showGregorian ? selectedDate.day - 1 : selectedDate.day - 1,
     );
     monthController = FixedExtentScrollController(
-      initialItem: showGregorian ? selectedDate.month - 1 : hijriDate.month - 1,
+      initialItem: showGregorian ? selectedDate.month - 1 : selectedDate.month - 1,
     );
     yearController = FixedExtentScrollController(
       initialItem: showGregorian
           ? selectedDate.year - minYear
-          : hijriDate.year - minYear,
+          : selectedDate.year - minYear,
     );
   }
 
@@ -485,7 +482,6 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final hijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
     return SafeArea(
       child: Directionality(
         textDirection: widget.language == 'ar'
@@ -498,7 +494,7 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(),
                 blurRadius: 10,
                 offset: const Offset(0, -2),
               ),
@@ -547,8 +543,7 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              if (widget.switcherIcon != null)
-                                widget.switcherIcon,
+                              widget.switcherIcon,
                               const SizedBox(width: 6),
                               Text(
                                 showGregorian
@@ -695,10 +690,6 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
     } else {
       return HijriGregDate.monthNamesEnglish[index];
     }
-  }
-
-  String _formatGregorianDate(DateTime date) {
-    return '${date.day} ${_getLocalizedGregorianMonthName(date.month)} ${date.year}';
   }
 
   @override

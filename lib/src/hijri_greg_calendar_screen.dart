@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:hijri_gregorian_calendar/hijri_gregorian_calendar.dart';
 
@@ -6,7 +5,8 @@ import 'package:hijri_gregorian_calendar/hijri_gregorian_calendar.dart';
 /// with the ability to switch between them and select dates.
 class HijriGregCalendarScreen extends StatefulWidget {
   @override
-  _HijriGregCalendarScreenState createState() => _HijriGregCalendarScreenState();
+  _HijriGregCalendarScreenState createState() =>
+      _HijriGregCalendarScreenState();
 }
 
 class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
@@ -60,10 +60,7 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
                 children: [
                   Text(
                     'Current Calendar Type',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.blue.shade700,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.blue.shade700),
                   ),
                   SizedBox(height: 8),
                   Text(
@@ -103,8 +100,8 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
                     children: [
                       Text(
                         showGregorian
-                          ? selectedDate.day.toString()
-                          : hijriDate.day.toString(),
+                            ? selectedDate.day.toString()
+                            : hijriDate.day.toString(),
                         style: TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
@@ -113,8 +110,8 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
                       ),
                       Text(
                         showGregorian
-                          ? _getGregorianMonthName(selectedDate.month)
-                          : hijriDate.monthNameEnglish,
+                            ? _getGregorianMonthName(selectedDate.month)
+                            : hijriDate.monthNameEnglish,
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w500,
@@ -123,8 +120,8 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
                       ),
                       Text(
                         showGregorian
-                          ? selectedDate.year.toString()
-                          : hijriDate.year.toString(),
+                            ? selectedDate.year.toString()
+                            : hijriDate.year.toString(),
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w500,
@@ -145,7 +142,9 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
                   Column(
                     children: [
                       Text(
-                        showGregorian ? 'Hijri Equivalent' : 'Gregorian Equivalent',
+                        showGregorian
+                            ? 'Hijri Equivalent'
+                            : 'Gregorian Equivalent',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade600,
@@ -154,8 +153,8 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
                       SizedBox(height: 8),
                       Text(
                         showGregorian
-                          ? hijriDate.format()
-                          : _formatGregorianDate(selectedDate),
+                            ? hijriDate.format()
+                            : _formatGregorianDate(selectedDate),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w500,
@@ -182,7 +181,9 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
                     });
                   },
                   icon: Icon(Icons.swap_horiz),
-                  label: Text('Switch to ${showGregorian ? 'Hijri' : 'Gregorian'}'),
+                  label: Text(
+                    'Switch to ${showGregorian ? 'Hijri' : 'Gregorian'}',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
@@ -221,10 +222,7 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
               },
               child: Text(
                 'Go to Today',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.blue.shade700,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.blue.shade700),
               ),
             ),
           ],
@@ -235,8 +233,18 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
 
   String _getGregorianMonthName(int month) {
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return monthNames[month - 1];
   }

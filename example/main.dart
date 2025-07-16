@@ -11,9 +11,7 @@ class MyCustomApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Custom Hijri Gregorian Calendar',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-      ),
+      theme: ThemeData(primarySwatch: Colors.green),
       home: HijriGregCalendarScreen(),
     );
   }
