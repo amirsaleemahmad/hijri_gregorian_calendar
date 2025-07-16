@@ -33,7 +33,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  hijri_gregorian_calendar: ^0.0.1
+  hijri_gregorian_calendar: ^0.0.3
 ```
 
 Then run:
@@ -217,7 +217,9 @@ HijriGregDatePicker(
 ```
 
 ### HijriGregCalendarApp Class
+![ui_view.png](ui_view.png)
 
+![ui_view_2.png](ui_view_2.png)
 #### Usage
 ```dart
 HijriGregCalendarApp() // Complete app widget
