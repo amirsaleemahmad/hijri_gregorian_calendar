@@ -3,8 +3,8 @@ import 'hijri_greg_date.dart';
 /// Utility class for converting between Hijri and Gregorian calendars.
 /// Uses astronomical calculations based on the Umm al-Qura calendar system.
 class HijriGregConverter {
-  // Epoch constants
-  static const int _hijriEpoch = 1948440; // Julian day of Hijri epoch (16 July 622 CE)
+  // Corrected epoch - Julian day of Hijri epoch (July 16, 622 CE)
+  static const int _hijriEpoch = 1948439; // Adjusted epoch by -1 day
 
   /// Converts a Gregorian DateTime to HijriGregDate
   static HijriGregDate gregorianToHijri(DateTime gregorianDate) {
@@ -32,9 +32,7 @@ class HijriGregConverter {
     int a = year ~/ 100;
     int b = 2 - a + (a ~/ 4);
 
-    return (365.25 * (year + 4716)).floor() +
-        (30.6001 * (month + 1)).floor() +
-        day + b - 1524;
+    return (365.25 * (year + 4716)).floor() + (30.6001 * (month + 1)).floor() + day + b - 1524;
   }
 
   /// Converts Julian day number to Gregorian date
@@ -53,56 +51,55 @@ class HijriGregConverter {
     return DateTime(year, month, day);
   }
 
-  /// Converts Julian day number to Hijri date
+  /// Converts Julian day number to Hijri date using more accurate algorithm
   static HijriGregDate _julianToHijri(int julianDay) {
-    int days = julianDay - _hijriEpoch;
+    // Calculate days since Hijri epoch
+    int daysSinceEpoch = julianDay - _hijriEpoch;
 
-    // Estimate the Hijri year
-    int year = ((days * 33) ~/ 10631) + 1;
+    // Estimate Hijri year using average year length
+    int hijriYear = (daysSinceEpoch * 33 ~/ 10631) + 1;
 
-    // Fine-tune the year
-    while (_hijriYearStart(year + 1) <= julianDay) {
-      year++;
+    // Adjust year to be more accurate
+    int yearStartJulian = _hijriYearStartJulian(hijriYear);
+    while (yearStartJulian > julianDay) {
+      hijriYear--;
+      yearStartJulian = _hijriYearStartJulian(hijriYear);
     }
-    while (_hijriYearStart(year) > julianDay) {
-      year--;
+    while (yearStartJulian + _hijriYearLength(hijriYear) <= julianDay) {
+      hijriYear++;
+      yearStartJulian = _hijriYearStartJulian(hijriYear);
     }
 
-    int yearStart = _hijriYearStart(year);
-    int dayOfYear = julianDay - yearStart + 1;
+    // Calculate day of year - corrected calculation
+    int dayOfYear = julianDay - yearStartJulian + 1;
 
-    // Find the month
+    // Find month and day
     int month = 1;
-    int remainingDays = dayOfYear;
+    int dayInMonth = dayOfYear;
 
     while (month <= 12) {
-      int monthLength = _hijriMonthLength(year, month);
-      if (remainingDays <= monthLength) {
+      int monthLength = _hijriMonthLength(hijriYear, month);
+      if (dayInMonth <= monthLength) {
         break;
       }
-      remainingDays -= monthLength;
+      dayInMonth -= monthLength;
       month++;
     }
 
-    // Ensure we have valid values
-    if (month > 12) {
-      month = 12;
-      remainingDays = _hijriMonthLength(year, month);
+    // Ensure we have valid day value
+    if (dayInMonth < 1) {
+      dayInMonth = 1;
     }
-    if (remainingDays < 1) {
-      remainingDays = 1;
+    if (dayInMonth > 30) {
+      dayInMonth = 30;
     }
 
-    return HijriGregDate(
-      day: remainingDays,
-      month: month,
-      year: year,
-    );
+    return HijriGregDate(day: dayInMonth, month: month, year: hijriYear);
   }
 
   /// Converts Hijri date to Julian day number
   static int _hijriToJulian(HijriGregDate hijriDate) {
-    int yearStart = _hijriYearStart(hijriDate.year);
+    int yearStart = _hijriYearStartJulian(hijriDate.year);
     int dayOfYear = 0;
 
     // Add days for complete months
@@ -116,60 +113,46 @@ class HijriGregConverter {
     return yearStart + dayOfYear;
   }
 
-  /// Calculates the Julian day number for the start of a Hijri year
-  static int _hijriYearStart(int year) {
-    if (year <= 0) return _hijriEpoch;
+  /// Calculate Julian day for start of Hijri year
+  static int _hijriYearStartJulian(int hijriYear) {
+    if (hijriYear <= 1) return _hijriEpoch;
 
-    // More accurate calculation using the mean synodic month
-    double meanYear = 354.36707; // Mean Hijri year length
-    int estimatedDays = ((year - 1) * meanYear).round();
-
-    // Add leap day corrections
-    int leapCorrection = _cumulativeLeapDays(year - 1);
-
-    return _hijriEpoch + estimatedDays + leapCorrection;
-  }
-
-  /// Calculates cumulative leap days up to a given year
-  static int _cumulativeLeapDays(int year) {
-    if (year <= 0) return 0;
-
-    int completeCycles = year ~/ 30;
-    int remainingYears = year % 30;
-
-    // Each 30-year cycle has 11 leap years
-    int leapDays = completeCycles * 11;
-
-    // Add leap days from the remaining years
-    const leapYears = [2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29];
-    for (int leapYear in leapYears) {
-      if (remainingYears >= leapYear) {
-        leapDays++;
-      }
+    // Calculate total days for completed years
+    int totalDays = 0;
+    for (int year = 1; year < hijriYear; year++) {
+      totalDays += _hijriYearLength(year);
     }
 
-    return leapDays;
+    return _hijriEpoch + totalDays;
+  }
+
+  /// Get the length of a Hijri year
+  static int _hijriYearLength(int year) {
+    return _isHijriLeapYear(year) ? 355 : 354;
   }
 
   /// Returns the length of a Hijri month
   static int _hijriMonthLength(int year, int month) {
     if (month <= 0 || month > 12) return 30;
 
-    bool isLeapYear = _isHijriLeapYear(year);
+    // Standard Islamic calendar month lengths
+    const List<int> monthLengths = [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29];
 
-    if (month == 12 && isLeapYear) {
-      return 30;
-    } else if (month % 2 == 1) {
-      return 30; // Odd months have 30 days
-    } else {
-      return 29; // Even months have 29 days
+    int length = monthLengths[month - 1];
+
+    // In leap years, the 12th month (Dhul-Hijjah) has 30 days instead of 29
+    if (month == 12 && _isHijriLeapYear(year)) {
+      length = 30;
     }
+
+    return length;
   }
 
-  /// Checks if a Hijri year is a leap year
+  /// Checks if a Hijri year is a leap year using the 30-year cycle
   static bool _isHijriLeapYear(int year) {
     if (year <= 0) return false;
 
+    // The 30-year cycle where leap years occur in years: 2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29
     const leapYears = [2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29];
     int yearInCycle = ((year - 1) % 30) + 1;
     return leapYears.contains(yearInCycle);

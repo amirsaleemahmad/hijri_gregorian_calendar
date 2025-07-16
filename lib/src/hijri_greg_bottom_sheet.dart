@@ -3,6 +3,46 @@ import 'hijri_greg_date.dart';
 import 'hijri_greg_converter.dart';
 import 'hijri_greg_date_picker.dart';
 
+// Custom scroll physics to remove overscroll glow
+class NoOverscrollPhysics extends ScrollPhysics {
+  const NoOverscrollPhysics({ScrollPhysics? parent}) : super(parent: parent);
+
+  @override
+  NoOverscrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return NoOverscrollPhysics(parent: buildParent(ancestor));
+  }
+
+  @override
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
+  }
+
+  @override
+  double applyBoundaryConditions(ScrollMetrics position, double value) {
+    if (value < position.pixels &&
+        position.pixels <= position.minScrollExtent) {
+      return value - position.pixels;
+    }
+    if (position.maxScrollExtent <= position.pixels &&
+        position.pixels < value) {
+      return value - position.pixels;
+    }
+    if (value < position.minScrollExtent &&
+        position.minScrollExtent < position.pixels) {
+      return value - position.minScrollExtent;
+    }
+    if (position.pixels < position.maxScrollExtent &&
+        position.maxScrollExtent < value) {
+      return value - position.maxScrollExtent;
+    }
+    return 0.0;
+  }
+}
+
 /// A compact bottom sheet widget for Hijri-Gregorian calendar functionality
 /// that can be easily integrated into other apps.
 class HijriGregBottomSheet extends StatefulWidget {
@@ -30,6 +70,16 @@ class HijriGregBottomSheet extends StatefulWidget {
   /// Whether to show the date picker button
   final bool showDatePicker;
 
+  final Widget switcherIcon;
+
+  final String fontFamily;
+
+  final String language;
+
+  final Widget? okWidget;
+
+  final Widget? cancelWidget;
+
   const HijriGregBottomSheet({
     Key? key,
     this.initialDate,
@@ -40,6 +90,11 @@ class HijriGregBottomSheet extends StatefulWidget {
     this.height,
     this.showCalendarToggle = true,
     this.showDatePicker = true,
+    this.switcherIcon = const SizedBox(),
+    this.fontFamily = 'Poppins',
+    this.language = 'en',
+    this.okWidget,
+    this.cancelWidget,
   }) : super(key: key);
 
   @override
@@ -50,244 +105,608 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
   late DateTime selectedDate;
   late bool showGregorian;
 
+  // Add controllers to manage scroll positions
+  late FixedExtentScrollController dayController;
+  late FixedExtentScrollController monthController;
+  late FixedExtentScrollController yearController;
+
   @override
   void initState() {
     super.initState();
     selectedDate = widget.initialDate ?? DateTime.now();
     showGregorian = widget.initialShowGregorian;
+    _initializeControllers();
   }
 
-  void _showDatePicker() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          child: HijriGregDatePicker(
-            initialDate: selectedDate,
-            isGregorian: showGregorian,
-            onDateSelected: (newDate) {
-              setState(() {
-                selectedDate = newDate;
-              });
-              widget.onDateSelected?.call(newDate);
-              Navigator.of(context).pop();
-            },
-          ),
-        );
-      },
+  void _initializeControllers() {
+    final hijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
+    final int minYear = showGregorian ? 1900 : 1300;
+
+    dayController = FixedExtentScrollController(
+      initialItem: showGregorian ? selectedDate.day - 1 : hijriDate.day - 1,
     );
+    monthController = FixedExtentScrollController(
+      initialItem: showGregorian ? selectedDate.month - 1 : hijriDate.month - 1,
+    );
+    yearController = FixedExtentScrollController(
+      initialItem: showGregorian
+          ? selectedDate.year - minYear
+          : hijriDate.year - minYear,
+    );
+  }
+
+  void _updateControllers() {
+    DateTime tempSelectedDate = selectedDate;
+    print(
+      'Updating controllers for selected date: $selectedDate, showGregorian: $showGregorian',
+    );
+    print(
+      'Updating controllers for temp selected date: $tempSelectedDate, showGregorian: $showGregorian',
+    );
+
+    final hijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
+    final int minYear = showGregorian ? 1900 : 1300;
+    dayController.animateToItem(
+      showGregorian ? selectedDate.day - 1 : hijriDate.day - 1,
+      duration: Duration(milliseconds: 100),
+      curve: Curves.easeInOut,
+    );
+    monthController.animateToItem(
+      showGregorian ? selectedDate.month - 1 : hijriDate.month - 1,
+      duration: Duration(milliseconds: 100),
+      curve: Curves.easeInOut,
+    );
+    yearController.animateToItem(
+      showGregorian ? selectedDate.year - minYear : hijriDate.year - minYear,
+      duration: Duration(milliseconds: 100),
+      curve: Curves.easeInOut,
+    );
+    selectedDate = tempSelectedDate;
   }
 
   void _toggleCalendarType() {
     setState(() {
       showGregorian = !showGregorian;
     });
+    // Update controllers to show the correct positions in the new calendar type
+    _updateControllers();
+
     widget.onCalendarTypeChanged?.call(showGregorian);
+  }
+
+  void _onOkPressed() {
+    widget.onDateSelected?.call(selectedDate);
+  }
+
+  void _onCancelPress() {
+    Navigator.of(context).pop();
+  }
+
+  String _getLocalizedText(String enText, String arText) {
+    return widget.language == 'ar' ? arText : enText;
+  }
+
+  Widget _buildScrollablePicker() {
+    final hijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
+    final int minYear = showGregorian ? 1900 : 1300;
+    final int maxYear = showGregorian ? 2100 : 1500;
+    final int monthCount = 12;
+
+    // Create current selections for Hijri mode
+    int currentHijriDay = hijriDate.day;
+    int currentHijriMonth = hijriDate.month;
+    int currentHijriYear = hijriDate.year;
+
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(
+        context,
+      ).copyWith(overscroll: false, physics: const ClampingScrollPhysics()),
+      child: NotificationListener<OverscrollIndicatorNotification>(
+        onNotification: (notification) {
+          notification.disallowIndicator();
+          return true;
+        },
+        child: Directionality(
+          textDirection: widget.language == 'ar'
+              ? TextDirection.rtl
+              : TextDirection.ltr,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Day picker
+              SizedBox(
+                width: 65,
+                child: ListWheelScrollView.useDelegate(
+                  itemExtent: 40,
+                  physics: const ClampingScrollPhysics(),
+                  onSelectedItemChanged: (index) {
+                    setState(() {
+                      if (showGregorian) {
+                        selectedDate = DateTime(
+                          selectedDate.year,
+                          selectedDate.month,
+                          index + 1,
+                        );
+                      } else {
+                        // Get fresh Hijri date values for current selectedDate
+                        final currentHijriDate =
+                            HijriGregConverter.gregorianToHijri(selectedDate);
+                        try {
+                          final newHijriDate = HijriGregDate(
+                            year: currentHijriDate.year,
+                            month: currentHijriDate.month,
+                            day: index + 1,
+                          );
+                          selectedDate = HijriGregConverter.hijriToGregorian(
+                            newHijriDate,
+                          );
+                        } catch (e) {
+                          // If invalid date, keep current selection
+                          print(
+                            'Invalid Hijri date: ${currentHijriDate.year}-${currentHijriDate.month}-${index + 1}',
+                          );
+                        }
+                      }
+                    });
+                  },
+                  childDelegate: ListWheelChildBuilderDelegate(
+                    builder: (context, index) {
+                      if (index < 0 || index >= 31) return null;
+
+                      // Check if this day is valid for current Hijri month/year
+                      bool isValidDay = true;
+                      if (!showGregorian) {
+                        try {
+                          HijriGregDate(
+                            year: currentHijriYear,
+                            month: currentHijriMonth,
+                            day: index + 1,
+                          );
+                        } catch (e) {
+                          isValidDay = false;
+                        }
+                      }
+
+                      if (!isValidDay) return Container(); // Hide invalid days
+
+                      bool isSelected =
+                          (showGregorian
+                              ? selectedDate.day - 1
+                              : currentHijriDay - 1) ==
+                          index;
+                      return Container(
+                        width: 65,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isSelected ? Color(0xFF2E3039) : null,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            (index + 1).toString(),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Color(0xFF2E3039),
+                              fontFamily: widget.fontFamily,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: 31,
+                  ),
+                  controller: dayController,
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Month picker
+              SizedBox(
+                width: 120,
+                child: ListWheelScrollView.useDelegate(
+                  itemExtent: 40,
+                  physics: const ClampingScrollPhysics(),
+                  onSelectedItemChanged: (index) {
+                    setState(() {
+                      if (showGregorian) {
+                        selectedDate = DateTime(
+                          selectedDate.year,
+                          index + 1,
+                          selectedDate.day,
+                        );
+                      } else {
+                        // Get fresh Hijri date values for current selectedDate
+                        final currentHijriDate =
+                            HijriGregConverter.gregorianToHijri(selectedDate);
+                        try {
+                          final newHijriDate = HijriGregDate(
+                            year: currentHijriDate.year,
+                            month: index + 1,
+                            day: currentHijriDate.day,
+                          );
+                          selectedDate = HijriGregConverter.hijriToGregorian(
+                            newHijriDate,
+                          );
+                        } catch (e) {
+                          // If invalid date, try with day 1
+                          try {
+                            final newHijriDate = HijriGregDate(
+                              year: currentHijriDate.year,
+                              month: index + 1,
+                              day: 1,
+                            );
+                            selectedDate = HijriGregConverter.hijriToGregorian(
+                              newHijriDate,
+                            );
+                          } catch (e2) {
+                            print(
+                              'Invalid Hijri date: ${currentHijriDate.year}-${index + 1}-${currentHijriDate.day}',
+                            );
+                          }
+                        }
+                      }
+                    });
+                  },
+                  childDelegate: ListWheelChildBuilderDelegate(
+                    builder: (context, index) {
+                      if (index < 0 || index >= monthCount) return null;
+                      bool isSelected =
+                          (showGregorian
+                              ? selectedDate.month - 1
+                              : currentHijriMonth - 1) ==
+                          index;
+                      return Container(
+                        width: 120,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isSelected ? Color(0xFF2E3039) : null,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            showGregorian
+                                ? _getLocalizedGregorianMonthName(index + 1)
+                                : _getLocalizedHijriMonthName(index),
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Color(0xFF2E3039),
+                              fontFamily: widget.fontFamily,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: monthCount,
+                  ),
+                  controller: monthController,
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Year picker
+              SizedBox(
+                width: 80,
+                child: ListWheelScrollView.useDelegate(
+                  itemExtent: 40,
+                  physics: const ClampingScrollPhysics(),
+                  onSelectedItemChanged: (index) {
+                    setState(() {
+                      if (showGregorian) {
+                        selectedDate = DateTime(
+                          minYear + index,
+                          selectedDate.month,
+                          selectedDate.day,
+                        );
+                      } else {
+                        // Get fresh Hijri date values for current selectedDate
+                        final currentHijriDate =
+                            HijriGregConverter.gregorianToHijri(selectedDate);
+                        try {
+                          final newHijriDate = HijriGregDate(
+                            year: minYear + index,
+                            month: currentHijriDate.month,
+                            day: currentHijriDate.day,
+                          );
+                          selectedDate = HijriGregConverter.hijriToGregorian(
+                            newHijriDate,
+                          );
+                        } catch (e) {
+                          // If invalid date, try with day 1
+                          try {
+                            final newHijriDate = HijriGregDate(
+                              year: minYear + index,
+                              month: currentHijriDate.month,
+                              day: 1,
+                            );
+                            selectedDate = HijriGregConverter.hijriToGregorian(
+                              newHijriDate,
+                            );
+                          } catch (e2) {
+                            print(
+                              'Invalid Hijri date: ${minYear + index}-${currentHijriDate.month}-${currentHijriDate.day}',
+                            );
+                          }
+                        }
+                      }
+                    });
+                  },
+                  childDelegate: ListWheelChildBuilderDelegate(
+                    builder: (context, index) {
+                      if (index < 0 || index > (maxYear - minYear)) return null;
+                      bool isSelected =
+                          (showGregorian
+                              ? selectedDate.year - minYear
+                              : currentHijriYear - minYear) ==
+                          index;
+                      return Container(
+                        width: 80,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isSelected ? Color(0xFF2E3039) : null,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            (minYear + index).toString(),
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Color(0xFF2E3039),
+                              fontFamily: widget.fontFamily,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: maxYear - minYear + 1,
+                  ),
+                  controller: yearController,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final hijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
-
-    return Container(
-      height: widget.height ?? 300,
-      decoration: BoxDecoration(
-        color: widget.backgroundColor ?? Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 8),
-            height: 4,
-            width: 40,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          // Header
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Calendar',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade800,
-                  ),
-                ),
-                if (widget.showCalendarToggle)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Text(
-                      showGregorian ? 'Gregorian' : 'Hijri',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // Date display
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ListView(
-                // mainAxisAlignment: MainAxisAlignment.center,
-                shrinkWrap: true,
-                children: [
-                  // Primary date display
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        showGregorian
-                          ? selectedDate.day.toString()
-                          : hijriDate.day.toString(),
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade800,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            showGregorian
-                              ? _getGregorianMonthName(selectedDate.month)
-                              : hijriDate.monthNameEnglish,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade700,
-                            ),
-                          ),
-                          Text(
-                            showGregorian
-                              ? selectedDate.year.toString()
-                              : hijriDate.year.toString(),
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.blue.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Secondary date display
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          showGregorian ? 'Hijri Equivalent' : 'Gregorian Equivalent',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          showGregorian
-                            ? hijriDate.format()
-                            : _formatGregorianDate(selectedDate),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    return SafeArea(
+      child: Directionality(
+        textDirection: widget.language == 'ar'
+            ? TextDirection.rtl
+            : TextDirection.ltr,
+        child: Container(
+          height: widget.height ?? 350,
+          decoration: BoxDecoration(
+            color: widget.backgroundColor ?? Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
               ),
-            ),
+            ],
           ),
-
-          // Action buttons
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                if (widget.showCalendarToggle)
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _toggleCalendarType,
-                      icon: const Icon(Icons.swap_horiz),
-                      label: Text('${showGregorian ? 'Hijri' : 'Gregorian'}'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.blue.shade700,
-                        side: BorderSide(color: Colors.blue.shade300),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                height: 4,
+                width: 60,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header row (no heading, calendar type toggle as button)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      _getLocalizedText('Select Date', 'اختر التاريخ'),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontFamily: widget.fontFamily,
+                        fontSize: 18,
+                        color: const Color(0xFF2E3039),
+                        letterSpacing: 0.1,
                       ),
                     ),
-                  ),
-                if (widget.showCalendarToggle && widget.showDatePicker)
-                  const SizedBox(width: 12),
-                if (widget.showDatePicker)
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _showDatePicker,
-                      icon: const Icon(Icons.calendar_today),
-                      label: const Text('Select Date'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
+                    if (widget.showCalendarToggle)
+                      GestureDetector(
+                        onTap: _toggleCalendarType,
+                        child: Container(
+                          width: 120,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Color(0xFFFEE9EA),
+                          ),
+                          padding: EdgeInsets.all(8),
+                          // decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (widget.switcherIcon != null)
+                                widget.switcherIcon,
+                              const SizedBox(width: 6),
+                              Text(
+                                showGregorian
+                                    ? _getLocalizedText('Gregorian', 'ميلادي')
+                                    : _getLocalizedText('Hijri', 'هجري'),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: widget.fontFamily,
+                                  fontSize: 14,
+                                  color: const Color(0xFFED1C2B),
+                                  letterSpacing: 0.1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Date picker
+              Expanded(child: Center(child: _buildScrollablePicker())),
+              // OK button centered
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: _onCancelPress,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Color(0xFFED1C2B),
+                          ),
+                          padding: EdgeInsets.all(10),
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                widget.cancelWidget ??
+                                    Text(
+                                      _getLocalizedText('Cancel', 'إلغاء'),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontFamily: widget.fontFamily,
+                                        fontSize: 16,
+                                        color: Colors.white,
+                                        letterSpacing: 0.1,
+                                      ),
+                                    ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
+                    SizedBox(width: 50),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: _onOkPressed,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Color(0xFFED1C2B),
+                          ),
+                          padding: EdgeInsets.all(10),
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                widget.okWidget ??
+                                    Text(
+                                      _getLocalizedText('Confirm', 'تأكيد'),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontFamily: widget.fontFamily,
+                                        fontSize: 16,
+                                        color: Colors.white,
+                                        letterSpacing: 0.1,
+                                      ),
+                                    ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  String _getGregorianMonthName(int month) {
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return monthNames[month - 1];
+  String _getLocalizedGregorianMonthName(int month) {
+    if (widget.language == 'ar') {
+      const monthNamesAr = [
+        'يناير',
+        'فبراير',
+        'مارس',
+        'أبريل',
+        'مايو',
+        'يونيو',
+        'يوليو',
+        'أغسطس',
+        'سبتمبر',
+        'أكتوبر',
+        'نوفمبر',
+        'ديسمبر',
+      ];
+      return monthNamesAr[month - 1];
+    } else {
+      const monthNamesEn = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
+      return monthNamesEn[month - 1];
+    }
+  }
+
+  String _getLocalizedHijriMonthName(int index) {
+    if (widget.language == 'ar') {
+      return HijriGregDate.monthNamesArabic[index];
+    } else {
+      return HijriGregDate.monthNamesEnglish[index];
+    }
   }
 
   String _formatGregorianDate(DateTime date) {
-    return '${date.day} ${_getGregorianMonthName(date.month)} ${date.year}';
+    return '${date.day} ${_getLocalizedGregorianMonthName(date.month)} ${date.year}';
+  }
+
+  @override
+  void dispose() {
+    dayController.dispose();
+    monthController.dispose();
+    yearController.dispose();
+    super.dispose();
   }
 }
 
@@ -302,6 +721,12 @@ Future<DateTime?> showHijriGregBottomSheet(
   bool showDatePicker = true,
   bool isDismissible = true,
   bool enableDrag = true,
+  Widget switcherIcon = const SizedBox(),
+  String fontFamily = 'Poppins',
+  String language = 'en',
+  Function(bool isGregorian)? onCalendarTypeChanged,
+  Widget? okWidget,
+  Widget? cancelWidget,
 }) {
   return showModalBottomSheet<DateTime>(
     context: context,
@@ -316,6 +741,12 @@ Future<DateTime?> showHijriGregBottomSheet(
       height: height,
       showCalendarToggle: showCalendarToggle,
       showDatePicker: showDatePicker,
+      switcherIcon: switcherIcon,
+      fontFamily: fontFamily,
+      language: language,
+      onCalendarTypeChanged: onCalendarTypeChanged,
+      okWidget: okWidget,
+      cancelWidget: cancelWidget,
       onDateSelected: (date) {
         Navigator.of(context).pop(date);
       },
