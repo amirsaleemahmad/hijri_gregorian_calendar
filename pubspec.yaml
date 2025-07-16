@@ -3,6 +3,8 @@ description: A Flutter package to convert and display Hijri and Gregorian calend
 version: 0.0.1
 author: Aamir Saleem Ahmad & Sultan Khan <amirsaleemahamd@gmail.com>
 homepage: https://github.com/amirsaleemahmad/hijri_gregorian_calendar
+repository: https://github.com/amirsaleemahmad/hijri_gregorian_calendar
+documentation: https://github.com/amirsaleemahmad/hijri_gregorian_calendar#readme
 
 
 environment:
