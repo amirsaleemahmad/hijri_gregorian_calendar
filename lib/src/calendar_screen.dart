@@ -38,11 +38,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final hijriDate = HijriConverter.gregorianToHijri(selectedDate);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Hijri Gregorian Calendar'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: Text('Hijri Gregorian Calendar'), backgroundColor: Colors.blue, foregroundColor: Colors.white),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -58,18 +54,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               child: Column(
                 children: [
-                  Text(
-                    'Current Calendar Type',
-                    style: TextStyle(fontSize: 16, color: Colors.blue.shade700),
-                  ),
+                  Text('Current Calendar Type', style: TextStyle(fontSize: 16, color: Colors.blue.shade700)),
                   SizedBox(height: 8),
                   Text(
                     showGregorian ? 'Gregorian' : 'Hijri',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade900,
-                    ),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blue.shade900),
                   ),
                 ],
               ),
@@ -84,14 +73,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
-                    spreadRadius: 2,
-                    blurRadius: 8,
-                    offset: Offset(0, 3),
-                  ),
-                ],
+                boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.3), spreadRadius: 2, blurRadius: 8, offset: Offset(0, 3))],
               ),
               child: Column(
                 children: [
@@ -99,34 +81,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   Column(
                     children: [
                       Text(
-                        showGregorian
-                            ? selectedDate.day.toString()
-                            : hijriDate.day.toString(),
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade800,
-                        ),
+                        showGregorian ? selectedDate.day.toString() : hijriDate.day.toString(),
+                        style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
                       ),
                       Text(
-                        showGregorian
-                            ? _getGregorianMonthName(selectedDate.month)
-                            : hijriDate.monthNameEnglish,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.blue.shade600,
-                        ),
+                        showGregorian ? _getGregorianMonthName(selectedDate.month) : hijriDate.monthNameEnglish,
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.blue.shade600),
                       ),
                       Text(
-                        showGregorian
-                            ? selectedDate.year.toString()
-                            : hijriDate.year.toString(),
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.blue.shade600,
-                        ),
+                        showGregorian ? selectedDate.year.toString() : hijriDate.year.toString(),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500, color: Colors.blue.shade600),
                       ),
                     ],
                   ),
@@ -141,25 +105,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   // Secondary date (smaller display)
                   Column(
                     children: [
-                      Text(
-                        showGregorian
-                            ? 'Hijri Equivalent'
-                            : 'Gregorian Equivalent',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
+                      Text(showGregorian ? 'Hijri Equivalent' : 'Gregorian Equivalent', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
                       SizedBox(height: 8),
                       Text(
-                        showGregorian
-                            ? hijriDate.format()
-                            : _formatGregorianDate(selectedDate),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade800,
-                        ),
+                        showGregorian ? hijriDate.format() : _formatGregorianDate(selectedDate),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.grey.shade800),
                       ),
                     ],
                   ),
@@ -181,16 +131,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     });
                   },
                   icon: Icon(Icons.swap_horiz),
-                  label: Text(
-                    'Switch to ${showGregorian ? 'Hijri' : 'Gregorian'}',
-                  ),
+                  label: Text('Switch to ${showGregorian ? 'Hijri' : 'Gregorian'}'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
 
@@ -203,9 +149,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ],
@@ -220,10 +164,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   selectedDate = DateTime.now();
                 });
               },
-              child: Text(
-                'Go to Today',
-                style: TextStyle(fontSize: 16, color: Colors.blue.shade700),
-              ),
+              child: Text('Go to Today', style: TextStyle(fontSize: 16, color: Colors.blue.shade700)),
             ),
           ],
         ),
@@ -232,20 +173,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   String _getGregorianMonthName(int month) {
-    const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     return monthNames[month - 1];
   }
 

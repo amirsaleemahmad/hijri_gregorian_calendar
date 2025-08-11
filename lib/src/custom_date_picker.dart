@@ -8,11 +8,7 @@ class CustomDatePicker extends StatefulWidget {
   final bool isGregorian;
   final Function(DateTime) onDateSelected;
 
-  CustomDatePicker({
-    required this.initialDate,
-    required this.isGregorian,
-    required this.onDateSelected,
-  });
+  CustomDatePicker({required this.initialDate, required this.isGregorian, required this.onDateSelected});
 
   @override
   _CustomDatePickerState createState() => _CustomDatePickerState();
@@ -87,15 +83,10 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
 
   void _generateHijriCalendar() {
     // Get the number of days in the current Hijri month
-    int daysInMonth = HijriConverter.getHijriMonthLength(
-      _currentYear,
-      _currentMonth,
-    );
+    int daysInMonth = HijriConverter.getHijriMonthLength(_currentYear, _currentMonth);
 
     // Calculate which day of the week the first day falls on
-    final firstDayGregorian = HijriConverter.hijriToGregorian(
-      HijriDate(day: 1, month: _currentMonth, year: _currentYear),
-    );
+    final firstDayGregorian = HijriConverter.hijriToGregorian(HijriDate(day: 1, month: _currentMonth, year: _currentYear));
     int startingWeekday = firstDayGregorian.weekday % 7;
 
     List<List<int>> grid = [];
@@ -156,11 +147,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
         newDate = DateTime(_currentYear, _currentMonth, day);
       } else {
         // Convert Hijri date to Gregorian
-        final hijriDate = HijriDate(
-          day: day,
-          month: _currentMonth,
-          year: _currentYear,
-        );
+        final hijriDate = HijriDate(day: day, month: _currentMonth, year: _currentYear);
         newDate = HijriConverter.hijriToGregorian(hijriDate);
       }
 
@@ -172,20 +159,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
 
   String _getCurrentMonthName() {
     if (_isGregorian) {
-      const monthNames = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ];
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       return monthNames[_currentMonth - 1];
     } else {
       return HijriDate.monthNamesEnglish[_currentMonth - 1];
@@ -196,14 +170,10 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
     if (day == 0) return false;
 
     if (_isGregorian) {
-      return day == _selectedDate.day &&
-          _currentMonth == _selectedDate.month &&
-          _currentYear == _selectedDate.year;
+      return day == _selectedDate.day && _currentMonth == _selectedDate.month && _currentYear == _selectedDate.year;
     } else {
       final hijriDate = HijriConverter.gregorianToHijri(_selectedDate);
-      return day == hijriDate.day &&
-          _currentMonth == hijriDate.month &&
-          _currentYear == hijriDate.year;
+      return day == hijriDate.day && _currentMonth == hijriDate.month && _currentYear == hijriDate.year;
     }
   }
 
@@ -220,11 +190,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Text(
               '${_isGregorian ? 'Gregorian' : 'Hijri'} Calendar',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue.shade800,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
             ),
           ),
 
@@ -232,24 +198,12 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left),
-                onPressed: _previousMonth,
-                color: Colors.blue.shade700,
-              ),
+              IconButton(icon: Icon(Icons.chevron_left), onPressed: _previousMonth, color: Colors.blue.shade700),
               Text(
                 '${_getCurrentMonthName()} $_currentYear',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade800,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
               ),
-              IconButton(
-                icon: Icon(Icons.chevron_right),
-                onPressed: _nextMonth,
-                color: Colors.blue.shade700,
-              ),
+              IconButton(icon: Icon(Icons.chevron_right), onPressed: _nextMonth, color: Colors.blue.shade700),
             ],
           ),
 
@@ -267,10 +221,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                         child: Center(
                           child: Text(
                             day,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade700,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade700),
                           ),
                         ),
                       ),
@@ -289,18 +240,10 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                     if (day != 0) {
                       if (_isGregorian) {
                         final today = DateTime.now();
-                        isToday =
-                            day == today.day &&
-                            _currentMonth == today.month &&
-                            _currentYear == today.year;
+                        isToday = day == today.day && _currentMonth == today.month && _currentYear == today.year;
                       } else {
-                        final todayHijri = HijriConverter.gregorianToHijri(
-                          DateTime.now(),
-                        );
-                        isToday =
-                            day == todayHijri.day &&
-                            _currentMonth == todayHijri.month &&
-                            _currentYear == todayHijri.year;
+                        final todayHijri = HijriConverter.gregorianToHijri(DateTime.now());
+                        isToday = day == todayHijri.day && _currentMonth == todayHijri.month && _currentYear == todayHijri.year;
                       }
                     }
 
@@ -316,9 +259,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                               ? Colors.blue.shade100
                               : Colors.transparent,
                           shape: BoxShape.circle,
-                          border: isToday && !isSelected
-                              ? Border.all(color: Colors.blue, width: 2)
-                              : null,
+                          border: isToday && !isSelected ? Border.all(color: Colors.blue, width: 2) : null,
                         ),
                         child: Center(
                           child: Text(
@@ -331,9 +272,7 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
                                   : day == 0
                                   ? Colors.transparent
                                   : Colors.black,
-                              fontWeight: isSelected || isToday
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                              fontWeight: isSelected || isToday ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                         ),
@@ -353,19 +292,13 @@ class _CustomDatePickerState extends State<CustomDatePicker> {
             children: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
+                child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
               ),
               ElevatedButton(
                 onPressed: () {
                   widget.onDateSelected(_selectedDate);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
                 child: Text('Select'),
               ),
             ],

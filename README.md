@@ -161,6 +161,13 @@ A utility class for converting between Hijri and Gregorian dates using proper as
 
 ## Screenshots
 
+![ui_view.png](ui_view.png)
+
+![ui_view_2.png](ui_view_2.png)
+
+![image.png](image.png)
+
+
 The package provides a clean, Material Design-compliant interface with:
 - Date display with primary and secondary calendar views
 - Toggle button to switch between calendar systems
@@ -217,9 +224,6 @@ HijriGregDatePicker(
 ```
 
 ### HijriGregCalendarApp Class
-![ui_view.png](ui_view.png)
-
-![ui_view_2.png](ui_view_2.png)
 #### Usage
 ```dart
 HijriGregCalendarApp() // Complete app widget
@@ -250,8 +254,9 @@ Aamir Saleem Ahmad - amirsaleemahamd@gmail.com
 ## Changelog
 
 ### 0.0.1
-- Initial release with basic Hijri-Gregorian conversion
-- Calendar UI components with unique class names
-- Date picker functionality
-- Comprehensive test coverage
-- All classes prefixed with `HijriGreg` to avoid conflicts
+
+### 0.0.4
+- Fixed design updates
+- Scrollable actions fixed
+- Stability fixes
+- Added font style support based on language

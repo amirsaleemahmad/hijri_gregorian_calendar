@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'hijri_greg_date.dart';
 import 'hijri_greg_converter.dart';
@@ -11,30 +12,22 @@ class NoOverscrollPhysics extends ScrollPhysics {
     return NoOverscrollPhysics(parent: buildParent(ancestor));
   }
 
-  Widget buildOverscrollIndicator(
-    BuildContext context,
-    Widget child,
-    ScrollableDetails details,
-  ) {
+  Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) {
     return child;
   }
 
   @override
   double applyBoundaryConditions(ScrollMetrics position, double value) {
-    if (value < position.pixels &&
-        position.pixels <= position.minScrollExtent) {
+    if (value < position.pixels && position.pixels <= position.minScrollExtent) {
       return value - position.pixels;
     }
-    if (position.maxScrollExtent <= position.pixels &&
-        position.pixels < value) {
+    if (position.maxScrollExtent <= position.pixels && position.pixels < value) {
       return value - position.pixels;
     }
-    if (value < position.minScrollExtent &&
-        position.minScrollExtent < position.pixels) {
+    if (value < position.minScrollExtent && position.minScrollExtent < position.pixels) {
       return value - position.minScrollExtent;
     }
-    if (position.pixels < position.maxScrollExtent &&
-        position.maxScrollExtent < value) {
+    if (position.pixels < position.maxScrollExtent && position.maxScrollExtent < value) {
       return value - position.maxScrollExtent;
     }
     return 0.0;
@@ -108,6 +101,11 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
   late FixedExtentScrollController monthController;
   late FixedExtentScrollController yearController;
 
+  // Add timers for auto-centering
+  Timer? _dayScrollTimer;
+  Timer? _monthScrollTimer;
+  Timer? _yearScrollTimer;
+
   @override
   void initState() {
     super.initState();
@@ -119,45 +117,21 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
   void _initializeControllers() {
     final int minYear = showGregorian ? 1900 : 1300;
 
-    dayController = FixedExtentScrollController(
-      initialItem: showGregorian ? selectedDate.day - 1 : selectedDate.day - 1,
-    );
-    monthController = FixedExtentScrollController(
-      initialItem: showGregorian ? selectedDate.month - 1 : selectedDate.month - 1,
-    );
-    yearController = FixedExtentScrollController(
-      initialItem: showGregorian
-          ? selectedDate.year - minYear
-          : selectedDate.year - minYear,
-    );
+    dayController = FixedExtentScrollController(initialItem: showGregorian ? selectedDate.day - 1 : selectedDate.day - 1);
+    monthController = FixedExtentScrollController(initialItem: showGregorian ? selectedDate.month - 1 : selectedDate.month - 1);
+    yearController = FixedExtentScrollController(initialItem: showGregorian ? selectedDate.year - minYear : selectedDate.year - minYear);
   }
 
   void _updateControllers() {
     DateTime tempSelectedDate = selectedDate;
-    print(
-      'Updating controllers for selected date: $selectedDate, showGregorian: $showGregorian',
-    );
-    print(
-      'Updating controllers for temp selected date: $tempSelectedDate, showGregorian: $showGregorian',
-    );
+    print('Updating controllers for selected date: $selectedDate, showGregorian: $showGregorian');
+    print('Updating controllers for temp selected date: $tempSelectedDate, showGregorian: $showGregorian');
 
     final hijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
     final int minYear = showGregorian ? 1900 : 1300;
-    dayController.animateToItem(
-      showGregorian ? selectedDate.day - 1 : hijriDate.day - 1,
-      duration: Duration(milliseconds: 100),
-      curve: Curves.easeInOut,
-    );
-    monthController.animateToItem(
-      showGregorian ? selectedDate.month - 1 : hijriDate.month - 1,
-      duration: Duration(milliseconds: 100),
-      curve: Curves.easeInOut,
-    );
-    yearController.animateToItem(
-      showGregorian ? selectedDate.year - minYear : hijriDate.year - minYear,
-      duration: Duration(milliseconds: 100),
-      curve: Curves.easeInOut,
-    );
+    dayController.animateToItem(showGregorian ? selectedDate.day - 1 : hijriDate.day - 1, duration: Duration(milliseconds: 100), curve: Curves.easeInOut);
+    monthController.animateToItem(showGregorian ? selectedDate.month - 1 : hijriDate.month - 1, duration: Duration(milliseconds: 100), curve: Curves.easeInOut);
+    yearController.animateToItem(showGregorian ? selectedDate.year - minYear : hijriDate.year - minYear, duration: Duration(milliseconds: 100), curve: Curves.easeInOut);
     selectedDate = tempSelectedDate;
   }
 
@@ -195,282 +169,246 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
     int currentHijriYear = hijriDate.year;
 
     return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(
-        context,
-      ).copyWith(overscroll: false, physics: const ClampingScrollPhysics()),
+      behavior: ScrollConfiguration.of(context).copyWith(overscroll: false, physics: const ClampingScrollPhysics()),
       child: NotificationListener<OverscrollIndicatorNotification>(
         onNotification: (notification) {
           notification.disallowIndicator();
           return true;
         },
         child: Directionality(
-          textDirection: widget.language == 'ar'
-              ? TextDirection.rtl
-              : TextDirection.ltr,
+          textDirection: widget.language == 'ar' ? TextDirection.rtl : TextDirection.ltr,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Day picker
               SizedBox(
                 width: 65,
-                child: ListWheelScrollView.useDelegate(
-                  itemExtent: 40,
-                  physics: const ClampingScrollPhysics(),
-                  onSelectedItemChanged: (index) {
-                    setState(() {
-                      if (showGregorian) {
-                        selectedDate = DateTime(
-                          selectedDate.year,
-                          selectedDate.month,
-                          index + 1,
-                        );
-                      } else {
-                        // Get fresh Hijri date values for current selectedDate
-                        final currentHijriDate =
-                            HijriGregConverter.gregorianToHijri(selectedDate);
-                        try {
-                          final newHijriDate = HijriGregDate(
-                            year: currentHijriDate.year,
-                            month: currentHijriDate.month,
-                            day: index + 1,
-                          );
-                          selectedDate = HijriGregConverter.hijriToGregorian(
-                            newHijriDate,
-                          );
-                        } catch (e) {
-                          // If invalid date, keep current selection
-                          print(
-                            'Invalid Hijri date: ${currentHijriDate.year}-${currentHijriDate.month}-${index + 1}',
-                          );
+                height: 200,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (scrollNotification) {
+                    if (scrollNotification is ScrollEndNotification) {
+                      // Reset timer when scroll ends
+                      _dayScrollTimer?.cancel();
+                      _dayScrollTimer = Timer(Duration(milliseconds: 150), () {
+                        // Auto-snap to center after scroll stops
+                        final currentIndex = dayController.selectedItem;
+                        if (currentIndex >= 0 && currentIndex < 31) {
+                          dayController.animateToItem(currentIndex, duration: Duration(milliseconds: 200), curve: Curves.easeInOut);
                         }
-                      }
-                    });
+                      });
+                    }
+                    return false;
                   },
-                  childDelegate: ListWheelChildBuilderDelegate(
-                    builder: (context, index) {
-                      if (index < 0 || index >= 31) return null;
-
-                      // Check if this day is valid for current Hijri month/year
-                      bool isValidDay = true;
-                      if (!showGregorian) {
-                        try {
-                          HijriGregDate(
-                            year: currentHijriYear,
-                            month: currentHijriMonth,
-                            day: index + 1,
-                          );
-                        } catch (e) {
-                          isValidDay = false;
+                  child: ListWheelScrollView.useDelegate(
+                    itemExtent: 40,
+                    physics: const ClampingScrollPhysics(),
+                    diameterRatio: 2.0,
+                    perspective: 0.002,
+                    squeeze: 1.1,
+                    onSelectedItemChanged: (index) {
+                      setState(() {
+                        if (showGregorian) {
+                          selectedDate = DateTime(selectedDate.year, selectedDate.month, index + 1);
+                        } else {
+                          // Get fresh Hijri date values for current selectedDate
+                          final currentHijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
+                          try {
+                            final newHijriDate = HijriGregDate(year: currentHijriDate.year, month: currentHijriDate.month, day: index + 1);
+                            selectedDate = HijriGregConverter.hijriToGregorian(newHijriDate);
+                          } catch (e) {
+                            // If invalid date, keep current selection
+                            print('Invalid Hijri date: ${currentHijriDate.year}-${currentHijriDate.month}-${index + 1}');
+                          }
                         }
-                      }
+                      });
+                    },
+                    childDelegate: ListWheelChildBuilderDelegate(
+                      builder: (context, index) {
+                        if (index < 0 || index >= 31) return null;
 
-                      if (!isValidDay) return Container(); // Hide invalid days
+                        // Check if this day is valid for current Hijri month/year
+                        bool isValidDay = true;
+                        if (!showGregorian) {
+                          try {
+                            HijriGregDate(year: currentHijriYear, month: currentHijriMonth, day: index + 1);
+                          } catch (e) {
+                            isValidDay = false;
+                          }
+                        }
 
-                      bool isSelected =
-                          (showGregorian
-                              ? selectedDate.day - 1
-                              : currentHijriDay - 1) ==
-                          index;
-                      return Container(
-                        width: 65,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: isSelected ? Color(0xFF2E3039) : null,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
+                        if (!isValidDay) return Container(); // Hide invalid days
+
+                        bool isSelected = (showGregorian ? selectedDate.day - 1 : currentHijriDay - 1) == index;
+                        return Container(
+                          width: 65,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(color: isSelected ? Color(0xFF2E3039) : Colors.transparent, borderRadius: BorderRadius.circular(8)),
                           child: Text(
                             (index + 1).toString(),
                             style: TextStyle(
-                              fontSize: 16,
-                              color: isSelected
-                                  ? Colors.white
-                                  : Color(0xFF2E3039),
+                              fontSize: isSelected ? 17 : 15,
+                              color: isSelected ? Colors.white : Color(0xFF2E3039).withOpacity(0.6),
                               fontFamily: widget.fontFamily,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    childCount: 31,
+                        );
+                      },
+                      childCount: 31,
+                    ),
+                    controller: dayController,
                   ),
-                  controller: dayController,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 15),
               // Month picker
               SizedBox(
                 width: 120,
-                child: ListWheelScrollView.useDelegate(
-                  itemExtent: 40,
-                  physics: const ClampingScrollPhysics(),
-                  onSelectedItemChanged: (index) {
-                    setState(() {
-                      if (showGregorian) {
-                        selectedDate = DateTime(
-                          selectedDate.year,
-                          index + 1,
-                          selectedDate.day,
-                        );
-                      } else {
-                        // Get fresh Hijri date values for current selectedDate
-                        final currentHijriDate =
-                            HijriGregConverter.gregorianToHijri(selectedDate);
-                        try {
-                          final newHijriDate = HijriGregDate(
-                            year: currentHijriDate.year,
-                            month: index + 1,
-                            day: currentHijriDate.day,
-                          );
-                          selectedDate = HijriGregConverter.hijriToGregorian(
-                            newHijriDate,
-                          );
-                        } catch (e) {
-                          // If invalid date, try with day 1
+                height: 200,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (scrollNotification) {
+                    if (scrollNotification is ScrollEndNotification) {
+                      // Reset timer when scroll ends
+                      _monthScrollTimer?.cancel();
+                      _monthScrollTimer = Timer(Duration(milliseconds: 150), () {
+                        // Auto-snap to center after scroll stops
+                        final currentIndex = monthController.selectedItem;
+                        if (currentIndex >= 0 && currentIndex < monthCount) {
+                          monthController.animateToItem(currentIndex, duration: Duration(milliseconds: 200), curve: Curves.easeInOut);
+                        }
+                      });
+                    }
+                    return false;
+                  },
+                  child: ListWheelScrollView.useDelegate(
+                    itemExtent: 45,
+                    physics: const ClampingScrollPhysics(),
+                    diameterRatio: 2.0,
+                    perspective: 0.002,
+                    squeeze: 1.1,
+                    onSelectedItemChanged: (index) {
+                      setState(() {
+                        if (showGregorian) {
+                          selectedDate = DateTime(selectedDate.year, index + 1, selectedDate.day);
+                        } else {
+                          // Get fresh Hijri date values for current selectedDate
+                          final currentHijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
                           try {
-                            final newHijriDate = HijriGregDate(
-                              year: currentHijriDate.year,
-                              month: index + 1,
-                              day: 1,
-                            );
-                            selectedDate = HijriGregConverter.hijriToGregorian(
-                              newHijriDate,
-                            );
-                          } catch (e2) {
-                            print(
-                              'Invalid Hijri date: ${currentHijriDate.year}-${index + 1}-${currentHijriDate.day}',
-                            );
+                            final newHijriDate = HijriGregDate(year: currentHijriDate.year, month: index + 1, day: currentHijriDate.day);
+                            selectedDate = HijriGregConverter.hijriToGregorian(newHijriDate);
+                          } catch (e) {
+                            // If invalid date, try with day 1
+                            try {
+                              final newHijriDate = HijriGregDate(year: currentHijriDate.year, month: index + 1, day: 1);
+                              selectedDate = HijriGregConverter.hijriToGregorian(newHijriDate);
+                            } catch (e2) {
+                              print('Invalid Hijri date: ${currentHijriDate.year}-${index + 1}-${currentHijriDate.day}');
+                            }
                           }
                         }
-                      }
-                    });
-                  },
-                  childDelegate: ListWheelChildBuilderDelegate(
-                    builder: (context, index) {
-                      if (index < 0 || index >= monthCount) return null;
-                      bool isSelected =
-                          (showGregorian
-                              ? selectedDate.month - 1
-                              : currentHijriMonth - 1) ==
-                          index;
-                      return Container(
-                        width: 120,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: isSelected ? Color(0xFF2E3039) : null,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
+                      });
+                    },
+                    childDelegate: ListWheelChildBuilderDelegate(
+                      builder: (context, index) {
+                        if (index < 0 || index >= monthCount) return null;
+                        bool isSelected = (showGregorian ? selectedDate.month - 1 : currentHijriMonth - 1) == index;
+                        return Container(
+                          width: 120,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(color: isSelected ? Color(0xFF2E3039) : Colors.transparent, borderRadius: BorderRadius.circular(8)),
                           child: Text(
-                            showGregorian
-                                ? _getLocalizedGregorianMonthName(index + 1)
-                                : _getLocalizedHijriMonthName(index),
+                            showGregorian ? _getLocalizedMonthName(index + 1, true) : _getLocalizedMonthName(index, false),
                             style: TextStyle(
-                              fontSize: 16,
-                              color: isSelected
-                                  ? Colors.white
-                                  : Color(0xFF2E3039),
+                              fontSize: isSelected ? 15 : 13,
+                              color: isSelected ? Colors.white : Color(0xFF2E3039).withOpacity(0.6),
                               fontFamily: widget.fontFamily,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                        ),
-                      );
-                    },
-                    childCount: monthCount,
+                        );
+                      },
+                      childCount: monthCount,
+                    ),
+                    controller: monthController,
                   ),
-                  controller: monthController,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 15),
               // Year picker
               SizedBox(
                 width: 80,
-                child: ListWheelScrollView.useDelegate(
-                  itemExtent: 40,
-                  physics: const ClampingScrollPhysics(),
-                  onSelectedItemChanged: (index) {
-                    setState(() {
-                      if (showGregorian) {
-                        selectedDate = DateTime(
-                          minYear + index,
-                          selectedDate.month,
-                          selectedDate.day,
-                        );
-                      } else {
-                        // Get fresh Hijri date values for current selectedDate
-                        final currentHijriDate =
-                            HijriGregConverter.gregorianToHijri(selectedDate);
-                        try {
-                          final newHijriDate = HijriGregDate(
-                            year: minYear + index,
-                            month: currentHijriDate.month,
-                            day: currentHijriDate.day,
-                          );
-                          selectedDate = HijriGregConverter.hijriToGregorian(
-                            newHijriDate,
-                          );
-                        } catch (e) {
-                          // If invalid date, try with day 1
+                height: 200,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (scrollNotification) {
+                    if (scrollNotification is ScrollEndNotification) {
+                      // Reset timer when scroll ends
+                      _yearScrollTimer?.cancel();
+                      _yearScrollTimer = Timer(Duration(milliseconds: 150), () {
+                        // Auto-snap to center after scroll stops
+                        final currentIndex = yearController.selectedItem;
+                        if (currentIndex >= 0 && currentIndex <= (maxYear - minYear)) {
+                          yearController.animateToItem(currentIndex, duration: Duration(milliseconds: 200), curve: Curves.easeInOut);
+                        }
+                      });
+                    }
+                    return false;
+                  },
+                  child: ListWheelScrollView.useDelegate(
+                    itemExtent: 40,
+                    physics: const ClampingScrollPhysics(),
+                    diameterRatio: 2.0,
+                    perspective: 0.002,
+                    squeeze: 1.1,
+                    onSelectedItemChanged: (index) {
+                      setState(() {
+                        if (showGregorian) {
+                          selectedDate = DateTime(minYear + index, selectedDate.month, selectedDate.day);
+                        } else {
+                          // Get fresh Hijri date values for current selectedDate
+                          final currentHijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
                           try {
-                            final newHijriDate = HijriGregDate(
-                              year: minYear + index,
-                              month: currentHijriDate.month,
-                              day: 1,
-                            );
-                            selectedDate = HijriGregConverter.hijriToGregorian(
-                              newHijriDate,
-                            );
-                          } catch (e2) {
-                            print(
-                              'Invalid Hijri date: ${minYear + index}-${currentHijriDate.month}-${currentHijriDate.day}',
-                            );
+                            final newHijriDate = HijriGregDate(year: minYear + index, month: currentHijriDate.month, day: currentHijriDate.day);
+                            selectedDate = HijriGregConverter.hijriToGregorian(newHijriDate);
+                          } catch (e) {
+                            // If invalid date, try with day 1
+                            try {
+                              final newHijriDate = HijriGregDate(year: minYear + index, month: currentHijriDate.month, day: 1);
+                              selectedDate = HijriGregConverter.hijriToGregorian(newHijriDate);
+                            } catch (e2) {
+                              print('Invalid Hijri date: ${minYear + index}-${currentHijriDate.month}-${currentHijriDate.day}');
+                            }
                           }
                         }
-                      }
-                    });
-                  },
-                  childDelegate: ListWheelChildBuilderDelegate(
-                    builder: (context, index) {
-                      if (index < 0 || index > (maxYear - minYear)) return null;
-                      bool isSelected =
-                          (showGregorian
-                              ? selectedDate.year - minYear
-                              : currentHijriYear - minYear) ==
-                          index;
-                      return Container(
-                        width: 80,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: isSelected ? Color(0xFF2E3039) : null,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
+                      });
+                    },
+                    childDelegate: ListWheelChildBuilderDelegate(
+                      builder: (context, index) {
+                        if (index < 0 || index > (maxYear - minYear)) return null;
+                        bool isSelected = (showGregorian ? selectedDate.year - minYear : currentHijriYear - minYear) == index;
+                        return Container(
+                          width: 80,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(color: isSelected ? Color(0xFF2E3039) : Colors.transparent, borderRadius: BorderRadius.circular(8)),
                           child: Text(
                             (minYear + index).toString(),
                             style: TextStyle(
-                              fontSize: 18,
-                              color: isSelected
-                                  ? Colors.white
-                                  : Color(0xFF2E3039),
+                              fontSize: isSelected ? 17 : 15,
+                              color: isSelected ? Colors.white : Color(0xFF2E3039).withOpacity(0.6),
                               fontFamily: widget.fontFamily,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    childCount: maxYear - minYear + 1,
+                        );
+                      },
+                      childCount: maxYear - minYear + 1,
+                    ),
+                    controller: yearController,
                   ),
-                  controller: yearController,
                 ),
               ),
             ],
@@ -480,25 +418,37 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
     );
   }
 
+  String _getLocalizedMonthName(int index, bool isGregorian) {
+    if (isGregorian) {
+      // Gregorian month names
+      if (widget.language == 'ar') {
+        const gregorianMonthNamesAr = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+        return gregorianMonthNamesAr[index - 1];
+      } else {
+        const gregorianMonthNamesEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        return gregorianMonthNamesEn[index - 1];
+      }
+    } else {
+      // Hijri month names from HijriGregDate class
+      if (widget.language == 'ar') {
+        return HijriGregDate.monthNamesArabic[index];
+      } else {
+        return HijriGregDate.monthNamesEnglish[index];
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Directionality(
-        textDirection: widget.language == 'ar'
-            ? TextDirection.rtl
-            : TextDirection.ltr,
+        textDirection: widget.language == 'ar' ? TextDirection.rtl : TextDirection.ltr,
         child: Container(
           height: widget.height ?? 350,
           decoration: BoxDecoration(
             color: widget.backgroundColor ?? Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(), blurRadius: 10, offset: const Offset(0, -2))],
           ),
           child: Column(
             children: [
@@ -507,10 +457,7 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                 margin: const EdgeInsets.only(top: 12),
                 height: 4,
                 width: 60,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
               ),
               // Header row (no heading, calendar type toggle as button)
               Padding(
@@ -521,23 +468,14 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                   children: [
                     Text(
                       _getLocalizedText('Select Date', 'اختر التاريخ'),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontFamily: widget.fontFamily,
-                        fontSize: 18,
-                        color: const Color(0xFF2E3039),
-                        letterSpacing: 0.1,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.w600, fontFamily: widget.fontFamily, fontSize: 18, color: const Color(0xFF2E3039), letterSpacing: 0.1),
                     ),
                     if (widget.showCalendarToggle)
                       GestureDetector(
                         onTap: _toggleCalendarType,
                         child: Container(
                           width: 120,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: Color(0xFFFEE9EA),
-                          ),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Color(0xFFFEE9EA)),
                           padding: EdgeInsets.all(8),
                           // decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
                           child: Row(
@@ -546,16 +484,8 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                               widget.switcherIcon,
                               const SizedBox(width: 6),
                               Text(
-                                showGregorian
-                                    ? _getLocalizedText('Gregorian', 'ميلادي')
-                                    : _getLocalizedText('Hijri', 'هجري'),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontFamily: widget.fontFamily,
-                                  fontSize: 14,
-                                  color: const Color(0xFFED1C2B),
-                                  letterSpacing: 0.1,
-                                ),
+                                showGregorian ? _getLocalizedText('Hijri', 'هجري') : _getLocalizedText('Gregorian', 'ميلادي'),
+                                style: TextStyle(fontWeight: FontWeight.w500, fontFamily: widget.fontFamily, fontSize: 14, color: const Color(0xFFED1C2B), letterSpacing: 0.1),
                               ),
                             ],
                           ),
@@ -577,10 +507,7 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                       child: GestureDetector(
                         onTap: _onCancelPress,
                         child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: Color(0xFFED1C2B),
-                          ),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Color(0xFFED1C2B)),
                           padding: EdgeInsets.all(10),
                           child: Center(
                             child: Row(
@@ -591,13 +518,7 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                                 widget.cancelWidget ??
                                     Text(
                                       _getLocalizedText('Cancel', 'إلغاء'),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                        fontFamily: widget.fontFamily,
-                                        fontSize: 16,
-                                        color: Colors.white,
-                                        letterSpacing: 0.1,
-                                      ),
+                                      style: TextStyle(fontWeight: FontWeight.w500, fontFamily: widget.fontFamily, fontSize: 16, color: Colors.white, letterSpacing: 0.1),
                                     ),
                               ],
                             ),
@@ -610,10 +531,7 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                       child: GestureDetector(
                         onTap: _onOkPressed,
                         child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: Color(0xFFED1C2B),
-                          ),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Color(0xFFED1C2B)),
                           padding: EdgeInsets.all(10),
                           child: Center(
                             child: Row(
@@ -624,13 +542,7 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                                 widget.okWidget ??
                                     Text(
                                       _getLocalizedText('Confirm', 'تأكيد'),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                        fontFamily: widget.fontFamily,
-                                        fontSize: 16,
-                                        color: Colors.white,
-                                        letterSpacing: 0.1,
-                                      ),
+                                      style: TextStyle(fontWeight: FontWeight.w500, fontFamily: widget.fontFamily, fontSize: 16, color: Colors.white, letterSpacing: 0.1),
                                     ),
                               ],
                             ),
@@ -648,55 +560,15 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
     );
   }
 
-  String _getLocalizedGregorianMonthName(int month) {
-    if (widget.language == 'ar') {
-      const monthNamesAr = [
-        'يناير',
-        'فبراير',
-        'مارس',
-        'أبريل',
-        'مايو',
-        'يونيو',
-        'يوليو',
-        'أغسطس',
-        'سبتمبر',
-        'أكتوبر',
-        'نوفمبر',
-        'ديسمبر',
-      ];
-      return monthNamesAr[month - 1];
-    } else {
-      const monthNamesEn = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ];
-      return monthNamesEn[month - 1];
-    }
-  }
-
-  String _getLocalizedHijriMonthName(int index) {
-    if (widget.language == 'ar') {
-      return HijriGregDate.monthNamesArabic[index];
-    } else {
-      return HijriGregDate.monthNamesEnglish[index];
-    }
-  }
-
   @override
   void dispose() {
     dayController.dispose();
     monthController.dispose();
     yearController.dispose();
+    // Cancel timers if they are active
+    _dayScrollTimer?.cancel();
+    _monthScrollTimer?.cancel();
+    _yearScrollTimer?.cancel();
     super.dispose();
   }
 }
