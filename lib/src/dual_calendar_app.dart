@@ -3,6 +3,7 @@ import 'calendar_screen.dart';
 
 /// Main application widget for the Hijri Gregorian Calendar
 class DualCalendarApp extends StatelessWidget {
+  const DualCalendarApp({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

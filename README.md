@@ -17,15 +17,18 @@ A comprehensive Flutter package for converting between Hijri (Islamic) and Grego
 
 ## Features
 
+- ✅ **Two Beautiful UI Designs**: V1 (scroll picker) and V2 (calendar grid + time picker)
+- ✅ **High Performance**: Optimized caching system eliminates lag when switching calendars
 - ✅ Accurate Hijri-Gregorian date conversion using astronomical calculations
-- ✅ Beautiful calendar UI that supports both calendar systems
 - ✅ Interactive date picker with month navigation
-- ✅ Switch between Hijri and Gregorian views
+- ✅ **Time Selection**: Predefined time slots in V2 design
+- ✅ Switch between Hijri and Gregorian views instantly
 - ✅ Proper month names in both English and Arabic
 - ✅ Leap year calculations for both calendar systems
 - ✅ Today indicator and date selection
+- ✅ **90% fewer conversion calls** through smart caching
 - ✅ Comprehensive test coverage
-- ✅ **Unique class names to prevent conflicts with other packages**
+- ✅ **Unique class names** to prevent conflicts with other packages
 
 ## Installation
 
@@ -33,7 +36,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  hijri_gregorian_calendar: ^0.0.3
+  hijri_gregorian_calendar: ^0.1.0
 ```
 
 Then run:
@@ -72,7 +75,56 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-### Date Conversion
+### Bottom Sheet Widgets
+
+#### HijriGregBottomSheet (V1 Design)
+```dart
+import 'package:flutter/material.dart';
+import 'package:hijri_gregorian_calendar/hijri_gregorian_calendar.dart';
+
+// Show V1 design with scroll picker
+showModalBottomSheet(
+  context: context,
+  builder: (context) => HijriGregBottomSheet(
+    initialDate: DateTime.now(),
+    initialShowGregorian: true,
+    onDateSelected: (DateTime selectedDate) {
+      print('Selected: $selectedDate');
+      Navigator.pop(context);
+    },
+    showCalendarToggle: true,
+    language: 'en', // or 'ar' for Arabic
+    fontFamily: 'Poppins',
+  ),
+);
+```
+
+#### HijriGregBottomSheetV2 (V2 Design)
+```dart
+import 'package:flutter/material.dart';
+import 'package:hijri_gregorian_calendar/hijri_gregorian_calendar.dart';
+
+// Show V2 design with calendar grid and time picker
+showModalBottomSheet(
+  context: context,
+  isScrollControlled: true,
+  builder: (context) => HijriGregBottomSheetV2(
+    initialDate: DateTime.now(),
+    initialTime: TimeOfDay.now(),
+    initialShowGregorian: true,
+    onDateTimeSelected: (DateTimeResult result) {
+      print('Selected Date: ${result.date}');
+      print('Selected Time: ${result.time}');
+      print('Combined DateTime: ${result.dateTime}');
+      Navigator.pop(context);
+    },
+    showCalendarToggle: true,
+    language: 'en', // or 'ar' for Arabic
+    fontFamily: 'Poppins',
+    height: 800, // Recommended height for V2
+  ),
+);
+```
 
 ```dart
 import 'package:hijri_gregorian_calendar/hijri_gregorian_calendar.dart';
@@ -249,7 +301,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Author
 
-Aamir Saleem Ahmad - amirsaleemahamd@gmail.com
+Aamir Saleem Ahmad - amirsaleemahmad@gmail.com
 
 ## Changelog
 
@@ -260,3 +312,10 @@ Aamir Saleem Ahmad - amirsaleemahamd@gmail.com
 - Scrollable actions fixed
 - Stability fixes
 - Added font style support based on language
+
+### 0.1.0
+- added design updates
+- Grid Desgn fixes
+- Stability fixes
+- Added font style support based on language.
+- added Design param DesignType (V1, V2)

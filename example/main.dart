@@ -7,6 +7,8 @@ void main() {
 
 // Alternative usage example
 class MyCustomApp extends StatelessWidget {
+  const MyCustomApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
