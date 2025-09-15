@@ -545,6 +545,8 @@ class HijriGregBottomSheetV2 extends StatefulWidget {
   final String language;
   final Widget? okWidget;
   final Widget? cancelWidget;
+  final List<String>? freeTimeSlots;
+  final bool showLangSwitcher;
 
   const HijriGregBottomSheetV2({
     Key? key,
@@ -562,6 +564,8 @@ class HijriGregBottomSheetV2 extends StatefulWidget {
     this.language = 'en',
     this.okWidget,
     this.cancelWidget,
+    this.freeTimeSlots,
+    this.showLangSwitcher = false,
   }) : super(key: key);
 
   @override
@@ -573,6 +577,7 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
   late TimeOfDay selectedTime;
   late bool showGregorian;
   late DateTime currentMonth;
+  late String currentLanguage;
 
   late HijriGregDate _cachedCurrentMonthHijri;
   late HijriGregDate _cachedSelectedDateHijri;
@@ -615,6 +620,11 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
 
   int selectedTimeSlotIndex = 0;
 
+  // New fields for freeTimeSlots functionality
+  List<DateTime> _parsedFreeSlots = [];
+  List<DateTime> _availableDates = [];
+  List<String> _availableTimeSlotsForDate = [];
+
   @override
   void initState() {
     super.initState();
@@ -622,16 +632,140 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
     selectedTime = widget.initialTime ?? TimeOfDay.now();
     showGregorian = widget.initialShowGregorian;
     currentMonth = DateTime(selectedDate.year, selectedDate.month, 1);
+    currentLanguage = widget.language;
 
     // Initialize cache
     _updateCachedValues();
 
+    // Parse free time slots if provided
+    if (widget.freeTimeSlots != null && widget.freeTimeSlots!.isNotEmpty) {
+      _parseFreeTimeSlots();
+      _updateAvailableTimeSlotsForDate();
+    } else {
+      // Use default time slots if no freeTimeSlots provided
+      _availableTimeSlotsForDate = List.from(timeSlots);
+    }
+
     // Find closest time slot
     String currentTimeString = '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
-    selectedTimeSlotIndex = timeSlots.indexOf(currentTimeString);
+    selectedTimeSlotIndex = _availableTimeSlotsForDate.indexOf(currentTimeString);
     if (selectedTimeSlotIndex == -1) {
       selectedTimeSlotIndex = 0; // Default to first slot if not found
     }
+  }
+
+  /// Parse the freeTimeSlots strings in format "/Date(timestamp+timezone)/"
+  void _parseFreeTimeSlots() {
+    _parsedFreeSlots.clear();
+    _availableDates.clear();
+
+    if (widget.freeTimeSlots == null) return;
+
+    for (String dateString in widget.freeTimeSlots!) {
+      try {
+        // Parse format like "/Date(1757917800000+0300)/"
+        final regExp = RegExp(r'/Date\((\d+)([\+\-]\d{4})\)/');
+        final match = regExp.firstMatch(dateString);
+
+        if (match != null) {
+          final timestamp = int.parse(match.group(1)!);
+          final timezoneStr = match.group(2)!;
+
+          // Parse timezone offset (e.g., "+0300" = +3 hours)
+          final isPositive = timezoneStr.startsWith('+');
+          final tzHours = int.parse(timezoneStr.substring(1, 3));
+          final tzMinutes = int.parse(timezoneStr.substring(3, 5));
+          final timezoneOffsetMinutes = (isPositive ? 1 : -1) * (tzHours * 60 + tzMinutes);
+
+          // Convert timestamp to DateTime (timestamp is in UTC)
+          final utcDateTime = DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true);
+
+          // Apply timezone offset to get local time
+          final localDateTime = utcDateTime.add(Duration(minutes: timezoneOffsetMinutes));
+
+          _parsedFreeSlots.add(localDateTime);
+
+          // Add unique dates to available dates
+          final dateOnly = DateTime(localDateTime.year, localDateTime.month, localDateTime.day);
+          if (!_availableDates.any((date) =>
+              date.year == dateOnly.year &&
+              date.month == dateOnly.month &&
+              date.day == dateOnly.day)) {
+            _availableDates.add(dateOnly);
+          }
+        }
+      } catch (e) {
+        // Skip invalid date strings
+        print('Failed to parse date string: $dateString, error: $e');
+      }
+    }
+  }
+
+  /// Update available time slots for the currently selected date
+  void _updateAvailableTimeSlotsForDate() {
+    _availableTimeSlotsForDate.clear();
+
+    if (widget.freeTimeSlots == null || widget.freeTimeSlots!.isEmpty) {
+      // No freeTimeSlots provided - show all default time slots for any date
+      _availableTimeSlotsForDate = List.from(timeSlots);
+      return;
+    }
+
+    // Find all time slots for the selected date from freeTimeSlots
+    for (DateTime slot in _parsedFreeSlots) {
+      if (slot.year == selectedDate.year &&
+          slot.month == selectedDate.month &&
+          slot.day == selectedDate.day) {
+        final timeString = '${slot.hour.toString().padLeft(2, '0')}:${slot.minute.toString().padLeft(2, '0')}';
+        if (!_availableTimeSlotsForDate.contains(timeString)) {
+          _availableTimeSlotsForDate.add(timeString);
+        }
+      }
+    }
+
+    // If this date has no time slots in freeTimeSlots, leave the list empty
+    // This allows the date to be selectable but without available time slots
+
+    // Sort time slots
+    _availableTimeSlotsForDate.sort();
+
+    // Ensure selectedTimeSlotIndex is valid for the new time slots list
+    if (selectedTimeSlotIndex >= _availableTimeSlotsForDate.length) {
+      selectedTimeSlotIndex = 0;
+    }
+
+    // Update selectedTime to match the current time slot selection
+    if (_availableTimeSlotsForDate.isNotEmpty) {
+      final timeParts = _availableTimeSlotsForDate[selectedTimeSlotIndex].split(':');
+      selectedTime = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
+    }
+  }
+
+  /// Check if a date is available for selection
+  bool _isDateAvailable(DateTime date) {
+    // Don't allow past dates (before today)
+    final today = DateTime.now();
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    final todayOnly = DateTime(today.year, today.month, today.day);
+
+    if (dateOnly.isBefore(todayOnly)) {
+      return false; // Past dates are not selectable
+    }
+
+    // All current and future dates are selectable
+    return true;
+  }
+
+  // Check if a date has actual time slots available from freeTimeSlots
+  bool _hasTimeSlots(DateTime date) {
+    if (widget.freeTimeSlots == null || widget.freeTimeSlots!.isEmpty) {
+      return false; // No time slots data provided
+    }
+
+    return _availableDates.any((availableDate) =>
+        availableDate.year == date.year &&
+        availableDate.month == date.month &&
+        availableDate.day == date.day);
   }
 
   void _updateCachedValues() {
@@ -648,13 +782,19 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
     widget.onCalendarTypeChanged?.call(showGregorian);
   }
 
+  void _toggleLanguage() {
+    setState(() {
+      currentLanguage = currentLanguage == 'en' ? 'ar' : 'en';
+    });
+  }
+
   void _onOkPressed() {
     final result = DateTimeResult(date: selectedDate, time: selectedTime);
     widget.onDateTimeSelected?.call(result);
   }
 
   String _getLocalizedText(String enText, String arText) {
-    return widget.language == 'ar' ? arText : enText;
+    return currentLanguage == 'ar' ? arText : enText;
   }
 
   List<DateTime> _getDaysInMonth(DateTime month) {
@@ -672,7 +812,7 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
   }
 
   Widget _buildCalendarGrid() {
-    final dayNames = widget.language == 'ar' ? ['سبت', 'جمعة', 'خميس', 'أربعاء', 'ثلاثاء', 'اثنين', 'أحد'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    final dayNames = currentLanguage == 'ar' ? ['سبت', 'جمعة', 'خميس', 'أربعاء', 'ثلاثاء', 'اثنين', 'أحد'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     if (showGregorian) {
       // Gregorian calendar view
@@ -704,40 +844,72 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
             itemCount: 42,
             itemBuilder: (context, index) {
               final day = days[index];
-              final isCurrentMonth = day.month == currentMonth.month;
+              final isCurrentMonth = day.month == currentMonth.month && day.year == currentMonth.year;
               final isSelected = selectedDate.year == day.year && selectedDate.month == day.month && selectedDate.day == day.day;
               final isToday = day.year == DateTime.now().year && day.month == DateTime.now().month && day.day == DateTime.now().day;
+              final isAvailable = _isDateAvailable(day);
+              final hasTimeSlots = _hasTimeSlots(day);
 
               return GestureDetector(
                 onTap: () {
-                  if (isCurrentMonth) {
+                  if (isCurrentMonth && isAvailable) {
                     setState(() {
                       selectedDate = day;
                       _updateCachedValues(); // Update cache when date changes
+                      _updateAvailableTimeSlotsForDate(); // Update time slots for new date
+                      selectedTimeSlotIndex = 0; // Reset to first available time slot
                     });
                   }
                 },
                 child: Container(
+                  key: ValueKey('${day.year}-${day.month}-${day.day}-$isSelected'), // Force rebuild when selection changes
                   margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFDE5246) : Colors.transparent,
+                    color: isSelected
+                        ? Colors.white
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
-                    border: isToday && !isSelected ? Border.all(color: const Color(0xFFDE5246), width: 1) : null,
+                    border: isSelected
+                        ? Border.all(color: const Color(0xFFDE5246), width: 1)
+                        : isToday && !isSelected
+                        ? null
+                        : null,
                   ),
-                  child: Center(
-                    child: Text(
-                      day.day.toString(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                        color: isSelected
-                            ? Colors.white
-                            : isCurrentMonth
-                            ? Colors.black87
-                            : Colors.grey.shade400,
-                        fontFamily: widget.fontFamily,
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: Text(
+                          day.day.toString(),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            color: isSelected
+                                ? const Color(0xFFDE5246)
+                                : isCurrentMonth && isAvailable
+                                ? Colors.black87
+                                : Colors.grey.shade400,
+                            fontFamily: widget.fontFamily,
+                          ),
+                        ),
                       ),
-                    ),
+                      // Red dot indicator for dates with actual time slots
+                      if (isCurrentMonth && hasTimeSlots && !isSelected)
+                        Positioned(
+                          bottom: 4,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDE5246),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               );
@@ -789,37 +961,69 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
               final isCurrentMonth = hijriDay.month == _cachedCurrentMonthHijri.month && hijriDay.year == _cachedCurrentMonthHijri.year;
               final isSelected = _cachedSelectedDateHijri.month == hijriDay.month && _cachedSelectedDateHijri.year == hijriDay.year && _cachedSelectedDateHijri.day == hijriDay.day;
               final isToday = _cachedTodayHijri.year == hijriDay.year && _cachedTodayHijri.month == hijriDay.month && _cachedTodayHijri.day == hijriDay.day;
+              final isAvailable = _isDateAvailable(gregorianDay);
+              final hasTimeSlots = _hasTimeSlots(gregorianDay);
 
               return GestureDetector(
                 onTap: () {
-                  if (isCurrentMonth) {
+                  if (isCurrentMonth && isAvailable) {
                     setState(() {
                       selectedDate = gregorianDay;
-                      _cachedSelectedDateHijri = hijriDay; // Update cache
+                      _updateCachedValues(); // Update all cache values consistently
+                      _updateAvailableTimeSlotsForDate(); // Update time slots for new date
+                      selectedTimeSlotIndex = 0; // Reset to first available time slot
                     });
                   }
                 },
                 child: Container(
+                  key: ValueKey('${gregorianDay.year}-${gregorianDay.month}-${gregorianDay.day}-$isSelected'), // Force rebuild when selection changes
                   margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFDE5246) : Colors.transparent,
+                    color: isSelected
+                        ? Colors.white
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
-                    border: isToday && !isSelected ? Border.all(color: const Color(0xFFDE5246), width: 1) : null,
+                    border: isSelected
+                        ? Border.all(color: const Color(0xFFDE5246), width: 1)
+                        : isToday && !isSelected
+                        ? Border.all(color: const Color(0xFFDE5246), width: 1)
+                        : null,
                   ),
-                  child: Center(
-                    child: Text(
-                      hijriDay.day.toString(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                        color: isSelected
-                            ? Colors.white
-                            : isCurrentMonth
-                            ? Colors.black87
-                            : Colors.grey.shade400,
-                        fontFamily: widget.fontFamily,
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: Text(
+                          hijriDay.day.toString(),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            color: isSelected
+                                ? const Color(0xFFDE5246)
+                                : isCurrentMonth && isAvailable
+                                ? Colors.black87
+                                : Colors.grey.shade400,
+                            fontFamily: widget.fontFamily,
+                          ),
+                        ),
                       ),
-                    ),
+                      // Red dot indicator for dates with actual time slots
+                      if (isCurrentMonth && hasTimeSlots && !isSelected)
+                        Positioned(
+                          bottom: 4,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDE5246),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               );
@@ -843,32 +1047,49 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87, fontFamily: widget.fontFamily),
           ),
         ),
-        Container(
+        SizedBox(
           height: 120,
-          child: GridView.builder(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 5, childAspectRatio: 2, crossAxisSpacing: 8, mainAxisSpacing: 8),
-            itemCount: timeSlots.length,
-            itemBuilder: (context, index) {
-              bool isSelected = selectedTimeSlotIndex == index;
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedTimeSlotIndex = index;
-                    final timeParts = timeSlots[index].split(':');
-                    selectedTime = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
-                  });
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected ? Color(0xFFDE5246) : Color(0xFFF5F5F5),
+          child: _availableTimeSlotsForDate.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Text(
+                      currentLanguage == 'ar'
+                          ? 'لا توجد أوقات متاحة لهذا التاريخ'
+                          : 'No time slots available for this date',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                        fontFamily: widget.fontFamily
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              : GridView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 5, childAspectRatio: 2, crossAxisSpacing: 8, mainAxisSpacing: 8),
+                  itemCount: _availableTimeSlotsForDate.length,
+                  itemBuilder: (context, index) {
+                    bool isSelected = selectedTimeSlotIndex == index;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedTimeSlotIndex = index;
+                          final timeParts = _availableTimeSlotsForDate[index].split(':');
+                          selectedTime = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
+                        });
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
-                    border: isSelected ? Border.all(color: Color(0xFFDE5246), width: 2) : null,
+                    border: isSelected ? Border.all(color: Color(0xFFDE5246), width: 2) : Border.all(color: Color(0x2E303933), width: 2),
                   ),
                   child: Center(
                     child: Text(
-                      timeSlots[index],
-                      style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, color: isSelected ? Colors.white : Colors.black87, fontFamily: widget.fontFamily),
+                      _availableTimeSlotsForDate[index],
+                      style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, color: isSelected ?  Color(0xFFDE5246) : Color(0xFF2E3039), fontFamily: widget.fontFamily),
                     ),
                   ),
                 ),
@@ -883,7 +1104,7 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
   String _getLocalizedMonthName(int index, bool isGregorian) {
     if (isGregorian) {
       // Gregorian month names
-      if (widget.language == 'ar') {
+      if (currentLanguage == 'ar') {
         const gregorianMonthNamesAr = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
         return gregorianMonthNamesAr[index - 1];
       } else {
@@ -892,7 +1113,7 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
       }
     } else {
       // Hijri month names from HijriGregDate class
-      if (widget.language == 'ar') {
+      if (currentLanguage == 'ar') {
         return HijriGregDate.monthNamesArabic[index];
       } else {
         return HijriGregDate.monthNamesEnglish[index];
@@ -929,7 +1150,7 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Directionality(
-        textDirection: widget.language == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+        textDirection: currentLanguage == 'ar' ? TextDirection.rtl : TextDirection.ltr,
         child: Container(
           height: widget.height ?? 810,
           decoration: BoxDecoration(
@@ -964,25 +1185,59 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
                         ),
                       ],
                     ),
-                    if (widget.showCalendarToggle)
-                      GestureDetector(
-                        onTap: _toggleCalendarType,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(color: Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(16)),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              widget.switcherIcon,
-                              if (widget.switcherIcon != const SizedBox()) const SizedBox(width: 4),
-                              Text(
-                                showGregorian ? _getLocalizedText('Hijri', 'هجري') : _getLocalizedText('Gregorian', 'ميلادي'),
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black87, fontFamily: widget.fontFamily),
+                    Row(
+                      children: [
+                        if (widget.showLangSwitcher)
+                          GestureDetector(
+                            onTap: _toggleLanguage,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Color(0xFFF0F0F0),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade300),
                               ),
-                            ],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.language, size: 16, color: Colors.grey.shade700),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    currentLanguage.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade700,
+                                      fontFamily: widget.fontFamily,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
+                        if (widget.showLangSwitcher && widget.showCalendarToggle)
+                          SizedBox(width: 8),
+                        if (widget.showCalendarToggle)
+                          GestureDetector(
+                            onTap: _toggleCalendarType,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(color: Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(16)),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  widget.switcherIcon,
+                                  if (widget.switcherIcon != const SizedBox()) const SizedBox(width: 4),
+                                  Text(
+                                    showGregorian ? _getLocalizedText('Hijri', 'هجري') : _getLocalizedText('Gregorian', 'ميلادي'),
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black87, fontFamily: widget.fontFamily),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -1084,6 +1339,8 @@ Future<dynamic> showHijriGregBottomSheet(
   Function(bool isGregorian)? onCalendarTypeChanged,
   Widget? okWidget,
   Widget? cancelWidget,
+  List<String>? freeTimeSlots,
+  bool showLangSwitcher = false,
 }) {
   if (design == Design.v2) {
     return showModalBottomSheet<DateTimeResult>(
@@ -1106,6 +1363,8 @@ Future<dynamic> showHijriGregBottomSheet(
         onCalendarTypeChanged: onCalendarTypeChanged,
         okWidget: okWidget,
         cancelWidget: cancelWidget,
+        freeTimeSlots: freeTimeSlots,
+        showLangSwitcher: showLangSwitcher,
         onDateTimeSelected: (result) {
           Navigator.of(context).pop(result);
         },
