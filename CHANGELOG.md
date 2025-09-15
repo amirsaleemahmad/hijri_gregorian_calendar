@@ -7,9 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.0.1] - 2025-07-16
+## [0.1.0] - 2025-09-06
 
-## [0.0.4] - 2025-08-11
+### Added
+- **V2 Design Support**: New `HijriGregBottomSheetV2` with enhanced calendar grid and time picker
+- **Performance Optimizations**: Major performance improvements for calendar switching
+  - Implemented caching system for Hijri-Gregorian conversions
+  - Eliminated lag when switching between calendar types
+  - Reduced conversion calls by 90% using smart caching
+- **Enhanced Calendar Grid**: Better month navigation and date selection
+- **Time Picker Integration**: Time slot selection in V2 design
+- **Improved Date Conversion**: More accurate and faster date conversions
+
+### Fixed
+- **Calendar Switching Performance**: Eliminated lag when toggling between Hijri and Gregorian
+- **Month Name Display**: Fixed inconsistent month name display across all components
+- **Date Selection**: Improved date selection accuracy in both calendar types
+- **UI Responsiveness**: Better responsive design for different screen sizes
+
+### Changed
+- **Breaking Change**: Updated to minimum Flutter 3.8.1 for better performance
+- **API Enhancement**: Better error handling in date conversions
+- **Code Optimization**: Significant performance improvements throughout the package
+
+## [0.0.5] - 2025-09-06
 
 ### Added
 - Font style support based on language

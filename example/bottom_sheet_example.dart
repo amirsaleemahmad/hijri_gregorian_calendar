@@ -7,22 +7,24 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hijri Calendar Bottom Sheet Example',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: ExampleHomePage(),
+      home: const ExampleHomePage(),
     );
   }
 }
 
 class ExampleHomePage extends StatefulWidget {
+  const ExampleHomePage({super.key});
   @override
-  _ExampleHomePageState createState() => _ExampleHomePageState();
+  ExampleHomePageState createState() => ExampleHomePageState();
 }
 
-class _ExampleHomePageState extends State<ExampleHomePage> {
+class ExampleHomePageState extends State<ExampleHomePage> {
   DateTime selectedDate = DateTime.now();
   bool currentCalendarType = true; // true = Gregorian, false = Hijri
 

@@ -8,13 +8,13 @@ class CustomDatePicker extends StatefulWidget {
   final bool isGregorian;
   final Function(DateTime) onDateSelected;
 
-  CustomDatePicker({required this.initialDate, required this.isGregorian, required this.onDateSelected});
+  const CustomDatePicker({super.key, required this.initialDate, required this.isGregorian, required this.onDateSelected});
 
   @override
-  _CustomDatePickerState createState() => _CustomDatePickerState();
+  CustomDatePickerState createState() => CustomDatePickerState();
 }
 
-class _CustomDatePickerState extends State<CustomDatePicker> {
+class CustomDatePickerState extends State<CustomDatePicker> {
   late DateTime _selectedDate;
   late int _currentYear;
   late int _currentMonth;

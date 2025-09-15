@@ -8,17 +8,13 @@ class HijriGregDatePicker extends StatefulWidget {
   final bool isGregorian;
   final Function(DateTime) onDateSelected;
 
-  HijriGregDatePicker({
-    required this.initialDate,
-    required this.isGregorian,
-    required this.onDateSelected,
-  });
+  const HijriGregDatePicker({super.key, required this.initialDate, required this.isGregorian, required this.onDateSelected});
 
   @override
-  _HijriGregDatePickerState createState() => _HijriGregDatePickerState();
+  HijriGregDatePickerState createState() => HijriGregDatePickerState();
 }
 
-class _HijriGregDatePickerState extends State<HijriGregDatePicker> {
+class HijriGregDatePickerState extends State<HijriGregDatePicker> {
   late DateTime _selectedDate;
   late int _currentYear;
   late int _currentMonth;
