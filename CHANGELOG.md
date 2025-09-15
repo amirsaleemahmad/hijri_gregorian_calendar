@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-09-15
+### Added
+- **V2 Design Support**: New `HijriGregBottomSheetV2` with enhanced calendar grid and time picker
+- **Performance Optimizations**: Major performance improvements for calendar switching
+  - Implemented caching system for Hijri-Gregorian conversions
+  - Eliminated lag when switching between calendar types
+  - Reduced conversion calls by 90% using smart caching
+- **Enhanced Calendar Grid**: Better month navigation and date selection
+- **Time Picker Integration**: Time slot selection in V2 design
+- **Improved Date Conversion**: More accurate and faster date conversions
+
+
 ## [0.1.0] - 2025-09-06
 
 ### Added

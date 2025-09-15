@@ -36,7 +36,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  hijri_gregorian_calendar: ^0.1.0
+  hijri_gregorian_calendar: ^0.1.1
 ```
 
 Then run:
@@ -315,7 +315,14 @@ Aamir Saleem Ahmad - amirsaleemahmad@gmail.com
 
 ### 0.1.0
 - added design updates
-- Grid Desgn fixes
+- Grid Design fixes
 - Stability fixes
 - Added font style support based on language.
 - added Design param DesignType (V1, V2)
+
+### 0.1.1
+- added design updates
+- Grid Design fixes
+- Stability fixes
+- Added font style support based on language.
+- added time Slots
