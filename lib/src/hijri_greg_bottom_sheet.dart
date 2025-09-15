@@ -563,7 +563,8 @@ class HijriGregBottomSheetV2 extends StatefulWidget {
   final String language;
   final Widget? okWidget;
   final Widget? cancelWidget;
-  final List<String>? freeTimeSlots;
+  final List<String>? dateTimeSlots;
+  final Map<String, List<String>>? timeSlots;
   final bool showLangSwitcher;
 
   const HijriGregBottomSheetV2({
@@ -582,7 +583,8 @@ class HijriGregBottomSheetV2 extends StatefulWidget {
     this.language = 'en',
     this.okWidget,
     this.cancelWidget,
-    this.freeTimeSlots,
+    this.dateTimeSlots,
+    this.timeSlots,
     this.showLangSwitcher = false,
   }) : super(key: key);
 
@@ -601,40 +603,6 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
   late HijriGregDate _cachedSelectedDateHijri;
   late HijriGregDate _cachedTodayHijri;
 
-  final List<String> timeSlots = [
-    '06:00',
-    '06:30',
-    '07:00',
-    '07:30',
-    '08:00',
-    '08:30',
-    '09:00',
-    '09:30',
-    '10:00',
-    '10:30',
-    '11:00',
-    '11:30',
-    '12:00',
-    '12:30',
-    '13:00',
-    '13:30',
-    '14:00',
-    '14:30',
-    '15:00',
-    '15:30',
-    '16:00',
-    '16:30',
-    '17:00',
-    '17:30',
-    '18:00',
-    '18:30',
-    '19:00',
-    '19:30',
-    '20:00',
-    '20:30',
-    '21:00',
-    '21:30',
-  ];
 
   int selectedTimeSlotIndex = 0;
   
@@ -655,14 +623,20 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
     // Initialize cache
     _updateCachedValues();
     
-    // Parse free time slots if provided
-    if (widget.freeTimeSlots != null && widget.freeTimeSlots!.isNotEmpty) {
+    // Parse free time slots if provided (complex format)
+    if (widget.dateTimeSlots != null && widget.dateTimeSlots!.isNotEmpty) {
       _parseFreeTimeSlots();
       _updateAvailableTimeSlotsForDate();
-    } else {
-      // Use default time slots if no freeTimeSlots provided
-      _availableTimeSlotsForDate = List.from(timeSlots);
-    }
+    } 
+    // Use simple timeSlots format if provided
+    else if (widget.timeSlots != null && widget.timeSlots!.isNotEmpty) {
+      _parseSimpleTimeSlots();
+      _updateAvailableTimeSlotsForDate();
+    } 
+    // Use default time slots if no specific slots provided
+    // else {
+    //   _availableTimeSlotsForDate = List.from(timeSlots);
+    // }
 
     // Find closest time slot
     String currentTimeString = '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
@@ -677,9 +651,9 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
     _parsedFreeSlots.clear();
     _availableDates.clear();
     
-    if (widget.freeTimeSlots == null) return;
+    if (widget.dateTimeSlots == null) return;
     
-    for (String dateString in widget.freeTimeSlots!) {
+    for (String dateString in widget.dateTimeSlots!) {
       try {
         // Parse format like "/Date(1757917800000+0300)/"
         final regExp = RegExp(r'/Date\((\d+)([\+\-]\d{4})\)/');
@@ -719,24 +693,79 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
     }
   }
 
+  /// Parse the simple timeSlots map in format {"15/09/2025": ["09:00", "10:00"]}
+  void _parseSimpleTimeSlots() {
+    _parsedFreeSlots.clear();
+    _availableDates.clear();
+    
+    if (widget.timeSlots == null) return;
+    
+    widget.timeSlots!.forEach((dateString, timeList) {
+      try {
+        // Parse date string in format "dd/MM/yyyy"
+        final dateParts = dateString.split('/');
+        if (dateParts.length == 3) {
+          final day = int.parse(dateParts[0]);
+          final month = int.parse(dateParts[1]);
+          final year = int.parse(dateParts[2]);
+          final date = DateTime(year, month, day);
+          
+          // Add unique dates to available dates
+          if (!_availableDates.any((availableDate) => 
+              availableDate.year == date.year && 
+              availableDate.month == date.month && 
+              availableDate.day == date.day)) {
+            _availableDates.add(date);
+          }
+          
+          // Create DateTime objects for each time slot
+          for (String timeString in timeList) {
+            final timeParts = timeString.split(':');
+            if (timeParts.length == 2) {
+              final hour = int.parse(timeParts[0]);
+              final minute = int.parse(timeParts[1]);
+              final dateTime = DateTime(year, month, day, hour, minute);
+              _parsedFreeSlots.add(dateTime);
+            }
+          }
+        }
+      } catch (e) {
+        // Skip invalid date strings
+        print('Failed to parse date string: $dateString, error: $e');
+      }
+    });
+  }
+
   /// Update available time slots for the currently selected date
   void _updateAvailableTimeSlotsForDate() {
     _availableTimeSlotsForDate.clear();
     
-    if (widget.freeTimeSlots == null || widget.freeTimeSlots!.isEmpty) {
-      // No freeTimeSlots provided - show all default time slots for any date
-      _availableTimeSlotsForDate = List.from(timeSlots);
+    // If neither dateTimeSlots nor timeSlots are provided, show default time slots
+    if ((widget.dateTimeSlots == null || widget.dateTimeSlots!.isEmpty) && 
+        (widget.timeSlots == null || widget.timeSlots!.isEmpty)) {
+      // _availableTimeSlotsForDate = List.from(timeSlots);
+      _availableTimeSlotsForDate = [];
       return;
     }
     
-    // Find all time slots for the selected date from freeTimeSlots
-    for (DateTime slot in _parsedFreeSlots) {
-      if (slot.year == selectedDate.year && 
-          slot.month == selectedDate.month && 
-          slot.day == selectedDate.day) {
-        final timeString = '${slot.hour.toString().padLeft(2, '0')}:${slot.minute.toString().padLeft(2, '0')}';
-        if (!_availableTimeSlotsForDate.contains(timeString)) {
-          _availableTimeSlotsForDate.add(timeString);
+    // If using simple timeSlots format
+    if (widget.timeSlots != null && widget.timeSlots!.isNotEmpty) {
+      final dateKey = '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}';
+      if (widget.timeSlots!.containsKey(dateKey)) {
+        _availableTimeSlotsForDate = List.from(widget.timeSlots![dateKey]!);
+      }
+    }
+    // If using complex dateTimeSlots format
+    else {
+      // Find all time slots for the selected date from dateTimeSlots
+      for (DateTime slot in _parsedFreeSlots) {
+        if (slot.year == selectedDate.year && 
+            slot.month == selectedDate.month && 
+            slot.day == selectedDate.day) {
+          final timeString = '${slot.hour.toString().padLeft(2, '0')}:${slot.minute.toString().padLeft(2, '0')}';
+          if (!_availableTimeSlotsForDate.contains(timeString)) {
+            _availableTimeSlotsForDate.add(timeString);
+          }
         }
       }
     }
@@ -774,16 +803,23 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
     return true;
   }
 
-  // Check if a date has actual time slots available from freeTimeSlots
+  // Check if a date has actual time slots available from dateTimeSlots or timeSlots
   bool _hasTimeSlots(DateTime date) {
-    if (widget.freeTimeSlots == null || widget.freeTimeSlots!.isEmpty) {
-      return false; // No time slots data provided
+    // If using simple timeSlots format
+    if (widget.timeSlots != null && widget.timeSlots!.isNotEmpty) {
+      final dateKey = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+      return widget.timeSlots!.containsKey(dateKey) && widget.timeSlots![dateKey]!.isNotEmpty;
     }
     
-    return _availableDates.any((availableDate) => 
-        availableDate.year == date.year && 
-        availableDate.month == date.month && 
-        availableDate.day == date.day);
+    // If using complex dateTimeSlots format
+    if (widget.dateTimeSlots != null && widget.dateTimeSlots!.isNotEmpty) {
+      return _availableDates.any((availableDate) => 
+          availableDate.year == date.year && 
+          availableDate.month == date.month && 
+          availableDate.day == date.day);
+    }
+    
+    return false; // No time slots data provided
   }
 
   void _updateCachedValues() {
@@ -1282,7 +1318,7 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade600, fontFamily: widget.fontFamily),
               ),
 
-              SizedBox(height: 20),
+              SizedBox(height: 10),
 
               Expanded(
                 child: Column(
@@ -1317,7 +1353,7 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
                     SizedBox(height: 10),
 
                     Expanded(
-                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _buildCalendarGrid()),
+                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: _buildCalendarGrid()),
                     ),
 
                     SizedBox(height: 10),
@@ -1374,7 +1410,8 @@ Future<dynamic> showHijriGregBottomSheet(
   Function(bool isGregorian)? onCalendarTypeChanged,
   Widget? okWidget,
   Widget? cancelWidget,
-  List<String>? freeTimeSlots,
+  List<String>? dateTimeSlots,
+  Map<String, List<String>>? timeSlots,
   bool showLangSwitcher = false,
 }) {
   if (design == Design.v2) {
@@ -1398,7 +1435,8 @@ Future<dynamic> showHijriGregBottomSheet(
         onCalendarTypeChanged: onCalendarTypeChanged,
         okWidget: okWidget,
         cancelWidget: cancelWidget,
-        freeTimeSlots: freeTimeSlots,
+        dateTimeSlots: dateTimeSlots,
+        timeSlots: timeSlots,
         showLangSwitcher: showLangSwitcher,
         onDateTimeSelected: (result) {
           Navigator.of(context).pop(result);
