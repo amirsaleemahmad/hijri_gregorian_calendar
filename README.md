@@ -17,7 +17,7 @@ A comprehensive Flutter package for converting between Hijri (Islamic) and Grego
 
 ## Features
 
-- ✅ **Two Beautiful UI Designs**: V1 (scroll picker) and V2 (calendar grid + time picker)
+- ✅ **Three Beautiful UI Designs**: V1 (scroll picker), V2 (calendar grid + time picker), and V3 (modern card-based design with segmented toggle)
 - ✅ **High Performance**: Optimized caching system eliminates lag when switching calendars
 - ✅ Accurate Hijri-Gregorian date conversion using astronomical calculations
 - ✅ Interactive date picker with month navigation
@@ -122,6 +122,44 @@ showModalBottomSheet(
     language: 'en', // or 'ar' for Arabic
     fontFamily: 'Poppins',
     height: 800, // Recommended height for V2
+  ),
+);
+```
+
+#### HijriGregBottomSheetV3 (V3 Design)
+```dart
+import 'package:flutter/material.dart';
+import 'package:hijri_gregorian_calendar/hijri_gregorian_calendar.dart';
+
+// Show V3 design with modern card-based layout and segmented toggle
+showHijriGregBottomSheet(
+  context,
+  design: Design.v3,
+  initialDate: DateTime.now(),
+  initialShowGregorian: true,
+  showCalendarToggle: true,
+  language: 'en',
+  fontFamily: 'Poppins',
+);
+
+// Or use the widget directly
+showModalBottomSheet(
+  context: context,
+  isScrollControlled: true,
+  backgroundColor: Colors.transparent,
+  builder: (context) => HijriGregBottomSheetV3(
+    initialDate: DateTime.now(),
+    initialTime: TimeOfDay.now(),
+    initialShowGregorian: true,
+    onDateTimeSelected: (DateTimeResult result) {
+      print('Selected Date: ${result.date}');
+      Navigator.pop(context);
+    },
+    showCalendarToggle: true,
+    title: 'Pick a Date',
+    subtitle: 'Please select the date you want to visit',
+    language: 'en',
+    fontFamily: 'Poppins',
   ),
 );
 ```
