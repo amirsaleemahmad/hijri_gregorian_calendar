@@ -1396,6 +1396,7 @@ class HijriGregBottomSheetV3 extends StatefulWidget {
   final TimeOfDay? initialTime;
   final bool initialShowGregorian;
   final Function(DateTimeResult)? onDateTimeSelected;
+  final Function(DateTime)? onDateSelected;
   final Function(bool isGregorian)? onCalendarTypeChanged;
   final Color? backgroundColor;
   final double? height;
@@ -1417,6 +1418,7 @@ class HijriGregBottomSheetV3 extends StatefulWidget {
     this.initialTime,
     this.initialShowGregorian = true,
     this.onDateTimeSelected,
+    this.onDateSelected,
     this.onCalendarTypeChanged,
     this.backgroundColor,
     this.height,
@@ -1616,8 +1618,12 @@ class _HijriGregBottomSheetV3State extends State<HijriGregBottomSheetV3> {
   }
 
   void _onOkPressed() {
-    final result = DateTimeResult(date: selectedDate, time: selectedTime);
-    widget.onDateTimeSelected?.call(result);
+    if (widget.isShowTimeSlots) {
+      final result = DateTimeResult(date: selectedDate, time: selectedTime);
+      widget.onDateTimeSelected?.call(result);
+    } else {
+      widget.onDateSelected?.call(selectedDate);
+    }
   }
 
   String _getLocalizedText(String enText, String arText) {
@@ -2270,35 +2276,64 @@ Future<dynamic> showHijriGregBottomSheet(
   String? subtitle,
 }) {
   if (design == Design.v3) {
-    return showModalBottomSheet<DateTimeResult>(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: isDismissible,
-      enableDrag: enableDrag,
-      backgroundColor: Colors.transparent,
-      builder: (context) => HijriGregBottomSheetV3(
-        initialDate: initialDate,
-        initialTime: initialTime,
-        initialShowGregorian: initialShowGregorian,
-        backgroundColor: backgroundColor,
-        height: height,
-        showCalendarToggle: showCalendarToggle,
-        isShowTimeSlots: isShowTimeSlots,
-        fontFamily: fontFamily,
-        language: language,
-        onCalendarTypeChanged: onCalendarTypeChanged,
-        okWidget: okWidget,
-        cancelWidget: cancelWidget,
-        dateTimeSlots: dateTimeSlots,
-        timeSlots: timeSlots,
-        showLangSwitcher: showLangSwitcher,
-        title: title,
-        subtitle: subtitle,
-        onDateTimeSelected: (result) {
-          Navigator.of(context).pop(result);
-        },
-      ),
-    );
+    if (isShowTimeSlots) {
+      return showModalBottomSheet<DateTimeResult>(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: isDismissible,
+        enableDrag: enableDrag,
+        backgroundColor: Colors.transparent,
+        builder: (context) => HijriGregBottomSheetV3(
+          initialDate: initialDate,
+          initialTime: initialTime,
+          initialShowGregorian: initialShowGregorian,
+          backgroundColor: backgroundColor,
+          height: height,
+          showCalendarToggle: showCalendarToggle,
+          isShowTimeSlots: isShowTimeSlots,
+          fontFamily: fontFamily,
+          language: language,
+          onCalendarTypeChanged: onCalendarTypeChanged,
+          okWidget: okWidget,
+          cancelWidget: cancelWidget,
+          dateTimeSlots: dateTimeSlots,
+          timeSlots: timeSlots,
+          showLangSwitcher: showLangSwitcher,
+          title: title,
+          subtitle: subtitle,
+          onDateTimeSelected: (result) {
+            Navigator.of(context).pop(result);
+          },
+        ),
+      );
+    } else {
+      return showModalBottomSheet<DateTime>(
+        context: context,
+        isScrollControlled: true,
+        isDismissible: isDismissible,
+        enableDrag: enableDrag,
+        backgroundColor: Colors.transparent,
+        builder: (context) => HijriGregBottomSheetV3(
+          initialDate: initialDate,
+          initialShowGregorian: initialShowGregorian,
+          backgroundColor: backgroundColor,
+          height: height,
+          showCalendarToggle: showCalendarToggle,
+          isShowTimeSlots: isShowTimeSlots,
+          fontFamily: fontFamily,
+          language: language,
+          onCalendarTypeChanged: onCalendarTypeChanged,
+          okWidget: okWidget,
+          cancelWidget: cancelWidget,
+          showLangSwitcher: showLangSwitcher,
+          title: title,
+          subtitle: subtitle,
+          onDateSelected: (date) {
+            Navigator.of(context).pop(date);
+          },
+        ),
+      );
+    }
   } else if (design == Design.v2) {
     return showModalBottomSheet<DateTimeResult>(
       context: context,

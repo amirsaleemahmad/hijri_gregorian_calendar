@@ -51,7 +51,7 @@ class ExampleHomePageState extends State<ExampleHomePage> {
     }
   }
 
-  // Method using V3 design
+  // Method using V3 design (without time slots - returns DateTime like V1)
   void _showV3CalendarBottomSheet() async {
     final result = await showHijriGregBottomSheet(
       context,
@@ -61,13 +61,13 @@ class ExampleHomePageState extends State<ExampleHomePage> {
       showCalendarToggle: true,
     );
 
-    if (result != null && result is DateTimeResult) {
+    if (result != null && result is DateTime) {
       setState(() {
-        selectedDate = result.date;
+        selectedDate = result;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Selected date: ${result.date.toString().split(' ')[0]}'),
+          content: Text('Selected date: ${result.toString().split(' ')[0]}'),
         ),
       );
     }
