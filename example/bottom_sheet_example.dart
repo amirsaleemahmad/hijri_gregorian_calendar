@@ -51,6 +51,28 @@ class ExampleHomePageState extends State<ExampleHomePage> {
     }
   }
 
+  // Method using V3 design
+  void _showV3CalendarBottomSheet() async {
+    final result = await showHijriGregBottomSheet(
+      context,
+      design: Design.v3,
+      initialDate: selectedDate,
+      initialShowGregorian: currentCalendarType,
+      showCalendarToggle: true,
+    );
+
+    if (result != null && result is DateTimeResult) {
+      setState(() {
+        selectedDate = result.date;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selected date: ${result.date.toString().split(' ')[0]}'),
+        ),
+      );
+    }
+  }
+
   // Method 2: Using the widget directly in showModalBottomSheet
   void _showCustomBottomSheet() {
     showModalBottomSheet(
@@ -204,6 +226,20 @@ class ExampleHomePageState extends State<ExampleHomePage> {
               label: Text('Show Calendar (Helper Function)'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+
+            SizedBox(height: 12),
+
+            // Method V3: New design
+            ElevatedButton.icon(
+              onPressed: _showV3CalendarBottomSheet,
+              icon: Icon(Icons.calendar_view_day),
+              label: Text('Show V3 Design Calendar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 12),
               ),
