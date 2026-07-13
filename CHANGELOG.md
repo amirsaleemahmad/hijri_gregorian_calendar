@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-07-13
+### Fixed
+- **Arabic Translation Correction**: Resolved Mojibake characters in Arabic translations inside all bottom sheet designs (e.g. converting garbled text to proper Arabic strings like "اختر التاريخ", "هجري", "ميلادي", etc.).
+- **Day Headers Sequence**: Corrected day names list in Arabic to match the standard Sunday-to-Saturday week sequence.
+- **DatePicker Arabic Support**: Added dynamic language parameter support in `HijriGregDatePicker` to translate the dialog header and day headers when language is set to Arabic.
+- **CalendarScreen & CalendarApp Localization**: Added full Arabic translation support for the main `HijriGregCalendarScreen`, `HijriGregCalendarApp` wrapper, and the example application homepage.
+
+## [0.1.3] - 2026-07-13
+### Added
+- **Dynamic Hijri Adjustment Offset**: Introduced `hijriAdjustment` parameter allowing calculation shifts by ±1 or ±2 days to adapt to moon sighting changes.
+- **Islamic Holiday Highlights**: Added `highlightHolidays` option and internal lookup on `HijriGregDate.getIslamicHoliday()` to highlight key religious dates (e.g. Ramadan, Eid, Ashura) with indicator dots.
+
+## [0.1.2] - 2026-07-13
+### Fixed
+- **Arabic Day Ordering**: Corrected the ordering of Arabic weekday headers to match the standard Sunday-to-Saturday sequence. This ensures correct date alignment under column headers in Arabic locale mode.
+- **Hijri Date Offset**: Adjusted internal tabular astronomical epoch algorithm `_hijriEpoch` to `1948440` to resolve a bug causing Hijri dates to display one day ahead of the actual date.
+
 ## [0.1.1] - 2025-09-15
 ### Added
 - **V2 Design Support**: New `HijriGregBottomSheetV2` with enhanced calendar grid and time picker

@@ -3,18 +3,17 @@ import 'hijri_greg_date.dart';
 /// Utility class for converting between Hijri and Gregorian calendars.
 /// Uses astronomical calculations based on the Umm al-Qura calendar system.
 class HijriGregConverter {
-  // Corrected epoch - Julian day of Hijri epoch (July 16, 622 CE)
-  static const int _hijriEpoch = 1948439; // Adjusted epoch by -1 day
+  static const int _hijriEpoch = 1948440; // Julian day of Hijri epoch (July 16, 622 CE)
 
   /// Converts a Gregorian DateTime to HijriGregDate
-  static HijriGregDate gregorianToHijri(DateTime gregorianDate) {
-    int julianDay = _gregorianToJulian(gregorianDate);
+  static HijriGregDate gregorianToHijri(DateTime gregorianDate, {int hijriAdjustment = 0}) {
+    int julianDay = _gregorianToJulian(gregorianDate) + hijriAdjustment;
     return _julianToHijri(julianDay);
   }
 
   /// Converts a HijriGregDate to Gregorian DateTime
-  static DateTime hijriToGregorian(HijriGregDate hijriDate) {
-    int julianDay = _hijriToJulian(hijriDate);
+  static DateTime hijriToGregorian(HijriGregDate hijriDate, {int hijriAdjustment = 0}) {
+    int julianDay = _hijriToJulian(hijriDate) - hijriAdjustment;
     return _julianToGregorian(julianDay);
   }
 
@@ -32,11 +31,7 @@ class HijriGregConverter {
     int a = year ~/ 100;
     int b = 2 - a + (a ~/ 4);
 
-    return (365.25 * (year + 4716)).floor() +
-        (30.6001 * (month + 1)).floor() +
-        day +
-        b -
-        1524;
+    return (365.25 * (year + 4716)).floor() + (30.6001 * (month + 1)).floor() + day + b - 1524;
   }
 
   /// Converts Julian day number to Gregorian date
@@ -117,14 +112,26 @@ class HijriGregConverter {
     return yearStart + dayOfYear;
   }
 
-  /// Calculate Julian day for start of Hijri year
+  /// Calculate Julian day for start of Hijri year using O(1) formula
   static int _hijriYearStartJulian(int hijriYear) {
     if (hijriYear <= 1) return _hijriEpoch;
 
-    // Calculate total days for completed years
-    int totalDays = 0;
-    for (int year = 1; year < hijriYear; year++) {
-      totalDays += _hijriYearLength(year);
+    final int completedYears = hijriYear - 1;
+    // Each 30-year cycle has exactly 10631 days (19 × 354 + 11 × 355)
+    final int completeCycles = completedYears ~/ 30;
+    final int remainingYears = completedYears % 30;
+
+    int totalDays = completeCycles * 10631;
+
+    // Add days for remaining years
+    totalDays += remainingYears * 354;
+
+    // Add leap days for remaining years
+    const leapYears = [2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29];
+    for (int ly in leapYears) {
+      if (remainingYears >= ly) {
+        totalDays++;
+      }
     }
 
     return _hijriEpoch + totalDays;
@@ -140,20 +147,7 @@ class HijriGregConverter {
     if (month <= 0 || month > 12) return 30;
 
     // Standard Islamic calendar month lengths
-    const List<int> monthLengths = [
-      30,
-      29,
-      30,
-      29,
-      30,
-      29,
-      30,
-      29,
-      30,
-      29,
-      30,
-      29,
-    ];
+    const List<int> monthLengths = [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29];
 
     int length = monthLengths[month - 1];
 

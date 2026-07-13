@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
 import 'hijri_greg_date.dart';
 import 'hijri_greg_converter.dart';
+import 'calendar_constants.dart';
 
-/// Custom date picker that supports both Hijri and Gregorian calendars
+/// Custom date picker that supports both Hijri and Gregorian calendars.
 class HijriGregDatePicker extends StatefulWidget {
   final DateTime initialDate;
   final bool isGregorian;
   final Function(DateTime) onDateSelected;
+  final int hijriAdjustment;
+  final bool highlightHolidays;
+  final String language;
 
-  const HijriGregDatePicker({super.key, required this.initialDate, required this.isGregorian, required this.onDateSelected});
+  const HijriGregDatePicker({
+    super.key,
+    required this.initialDate,
+    required this.isGregorian,
+    required this.onDateSelected,
+    this.hijriAdjustment = 0,
+    this.highlightHolidays = true,
+    this.language = 'en',
+  });
 
   @override
   HijriGregDatePickerState createState() => HijriGregDatePickerState();
@@ -18,8 +30,8 @@ class HijriGregDatePickerState extends State<HijriGregDatePicker> {
   late DateTime _selectedDate;
   late int _currentYear;
   late int _currentMonth;
-  late List<List<int>> _calendarGrid;
   late bool _isGregorian;
+  List<List<int>> _calendarGrid = [];
 
   @override
   void initState() {
@@ -31,7 +43,7 @@ class HijriGregDatePickerState extends State<HijriGregDatePicker> {
       _currentYear = _selectedDate.year;
       _currentMonth = _selectedDate.month;
     } else {
-      final hijriDate = HijriGregConverter.gregorianToHijri(_selectedDate);
+      final hijriDate = HijriGregConverter.gregorianToHijri(_selectedDate, hijriAdjustment: widget.hijriAdjustment);
       _currentYear = hijriDate.year;
       _currentMonth = hijriDate.month;
     }
@@ -39,87 +51,53 @@ class HijriGregDatePickerState extends State<HijriGregDatePicker> {
     _generateCalendar();
   }
 
+  // ---------------------------------------------------------------------------
+  // Calendar grid generation
+  // ---------------------------------------------------------------------------
+
   void _generateCalendar() {
-    if (_isGregorian) {
-      _generateGregorianCalendar();
-    } else {
-      _generateHijriCalendar();
-    }
+    _isGregorian ? _generateGregorianCalendar() : _generateHijriCalendar();
   }
 
   void _generateGregorianCalendar() {
-    final firstDayOfMonth = DateTime(_currentYear, _currentMonth, 1);
-    final lastDayOfMonth = DateTime(_currentYear, _currentMonth + 1, 0);
-
-    // Find weekday of first day (1=Monday, 7=Sunday)
-    int startingWeekday = firstDayOfMonth.weekday % 7;
-
-    List<List<int>> grid = [];
-    List<int> currentWeek = List.filled(7, 0);
-
-    int day = 1;
-    for (int i = 0; i < 6; i++) {
-      // 6 weeks max
-      for (int j = 0; j < 7; j++) {
-        if (i == 0 && j < startingWeekday) {
-          // Days from previous month
-          currentWeek[j] = 0;
-        } else if (day > lastDayOfMonth.day) {
-          // Days from next month
-          currentWeek[j] = 0;
-        } else {
-          currentWeek[j] = day;
-          day++;
-        }
-      }
-      grid.add(List.from(currentWeek));
-      if (day > lastDayOfMonth.day) break;
-    }
-
-    setState(() {
-      _calendarGrid = grid;
-    });
+    final firstDay = DateTime(_currentYear, _currentMonth, 1);
+    final lastDay = DateTime(_currentYear, _currentMonth + 1, 0);
+    _calendarGrid = _buildGrid(firstDay.weekday % 7, lastDay.day);
   }
 
   void _generateHijriCalendar() {
-    // Get the number of days in the current Hijri month
-    int daysInMonth = HijriGregConverter.getHijriMonthLength(
-      _currentYear,
-      _currentMonth,
-    );
-
-    // Calculate which day of the week the first day falls on
-    final firstDayGregorian = HijriGregConverter.hijriToGregorian(
+    final daysInMonth = HijriGregConverter.getHijriMonthLength(_currentYear, _currentMonth);
+    final firstDayGreg = HijriGregConverter.hijriToGregorian(
       HijriGregDate(day: 1, month: _currentMonth, year: _currentYear),
+      hijriAdjustment: widget.hijriAdjustment,
     );
-    int startingWeekday = firstDayGregorian.weekday % 7;
+    _calendarGrid = _buildGrid(firstDayGreg.weekday % 7, daysInMonth);
+  }
 
-    List<List<int>> grid = [];
-    List<int> currentWeek = List.filled(7, 0);
-
+  List<List<int>> _buildGrid(int startWeekday, int totalDays) {
+    final grid = <List<int>>[];
+    var week = List<int>.filled(7, 0);
     int day = 1;
+
     for (int i = 0; i < 6; i++) {
-      // 6 weeks max
       for (int j = 0; j < 7; j++) {
-        if (i == 0 && j < startingWeekday) {
-          // Days from previous month
-          currentWeek[j] = 0;
-        } else if (day > daysInMonth) {
-          // Days from next month
-          currentWeek[j] = 0;
+        if (i == 0 && j < startWeekday) {
+          week[j] = 0;
+        } else if (day > totalDays) {
+          week[j] = 0;
         } else {
-          currentWeek[j] = day;
-          day++;
+          week[j] = day++;
         }
       }
-      grid.add(List.from(currentWeek));
-      if (day > daysInMonth) break;
+      grid.add(List.from(week));
+      if (day > totalDays) break;
     }
-
-    setState(() {
-      _calendarGrid = grid;
-    });
+    return grid;
   }
+
+  // ---------------------------------------------------------------------------
+  // Navigation
+  // ---------------------------------------------------------------------------
 
   void _previousMonth() {
     setState(() {
@@ -146,81 +124,57 @@ class HijriGregDatePickerState extends State<HijriGregDatePicker> {
   }
 
   void _selectDate(int day) {
-    if (day != 0) {
-      DateTime newDate;
-      if (_isGregorian) {
-        newDate = DateTime(_currentYear, _currentMonth, day);
-      } else {
-        // Convert Hijri date to Gregorian
-        final hijriDate = HijriGregDate(
-          day: day,
-          month: _currentMonth,
-          year: _currentYear,
-        );
-        newDate = HijriGregConverter.hijriToGregorian(hijriDate);
-      }
+    if (day == 0) return;
 
-      setState(() {
-        _selectedDate = newDate;
-      });
+    DateTime newDate;
+    if (_isGregorian) {
+      newDate = DateTime(_currentYear, _currentMonth, day);
+    } else {
+      final hijriDate = HijriGregDate(day: day, month: _currentMonth, year: _currentYear);
+      newDate = HijriGregConverter.hijriToGregorian(hijriDate, hijriAdjustment: widget.hijriAdjustment);
     }
+    setState(() => _selectedDate = newDate);
   }
 
   String _getCurrentMonthName() {
     if (_isGregorian) {
-      const monthNames = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ];
-      return monthNames[_currentMonth - 1];
-    } else {
-      return HijriGregDate.monthNamesEnglish[_currentMonth - 1];
+      return CalendarConstants.getGregorianMonthName(_currentMonth, language: widget.language);
     }
+    if (widget.language == 'ar') {
+      return HijriGregDate.monthNamesArabic[_currentMonth - 1];
+    }
+    return HijriGregDate.monthNamesEnglish[_currentMonth - 1];
   }
 
   bool _isSelectedDate(int day) {
     if (day == 0) return false;
-
     if (_isGregorian) {
-      return day == _selectedDate.day &&
-          _currentMonth == _selectedDate.month &&
-          _currentYear == _selectedDate.year;
-    } else {
-      final hijriDate = HijriGregConverter.gregorianToHijri(_selectedDate);
-      return day == hijriDate.day &&
-          _currentMonth == hijriDate.month &&
-          _currentYear == hijriDate.year;
+      return day == _selectedDate.day && _currentMonth == _selectedDate.month && _currentYear == _selectedDate.year;
     }
+    final hijriDate = HijriGregConverter.gregorianToHijri(_selectedDate, hijriAdjustment: widget.hijriAdjustment);
+    return day == hijriDate.day && _currentMonth == hijriDate.month && _currentYear == hijriDate.year;
   }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 350,
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header with calendar type
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 8),
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              '${_isGregorian ? 'Gregorian' : 'Hijri'} Calendar',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue.shade800,
-              ),
+              widget.language == 'ar'
+                  ? (_isGregorian ? 'التقويم الميلادي' : 'التقويم الهجري')
+                  : '${_isGregorian ? 'Gregorian' : 'Hijri'} Calendar',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
             ),
           ),
 
@@ -228,45 +182,30 @@ class HijriGregDatePickerState extends State<HijriGregDatePicker> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left),
-                onPressed: _previousMonth,
-                color: Colors.blue.shade700,
-              ),
+              IconButton(icon: const Icon(Icons.chevron_left), onPressed: _previousMonth, color: Colors.blue.shade700),
               Text(
                 '${_getCurrentMonthName()} $_currentYear',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade800,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
               ),
-              IconButton(
-                icon: Icon(Icons.chevron_right),
-                onPressed: _nextMonth,
-                color: Colors.blue.shade700,
-              ),
+              IconButton(icon: const Icon(Icons.chevron_right), onPressed: _nextMonth, color: Colors.blue.shade700),
             ],
           ),
 
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
 
           // Calendar grid
           Table(
             children: [
               // Day headers
               TableRow(
-                children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                children: (widget.language == 'ar' ? CalendarConstants.dayNamesArabic : CalendarConstants.dayNamesEnglish)
                     .map(
                       (day) => Container(
-                        padding: EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Center(
                           child: Text(
                             day,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade700,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade700),
                           ),
                         ),
                       ),
@@ -278,32 +217,34 @@ class HijriGregDatePickerState extends State<HijriGregDatePicker> {
               ..._calendarGrid.map((week) {
                 return TableRow(
                   children: week.map((day) {
-                    bool isSelected = _isSelectedDate(day);
+                    final isSelected = _isSelectedDate(day);
                     bool isToday = false;
 
-                    // Check if this day is today
                     if (day != 0) {
                       if (_isGregorian) {
                         final today = DateTime.now();
-                        isToday =
-                            day == today.day &&
-                            _currentMonth == today.month &&
-                            _currentYear == today.year;
+                        isToday = day == today.day && _currentMonth == today.month && _currentYear == today.year;
                       } else {
-                        final todayHijri = HijriGregConverter.gregorianToHijri(
-                          DateTime.now(),
-                        );
-                        isToday =
-                            day == todayHijri.day &&
-                            _currentMonth == todayHijri.month &&
-                            _currentYear == todayHijri.year;
+                        final todayHijri = HijriGregConverter.gregorianToHijri(DateTime.now(), hijriAdjustment: widget.hijriAdjustment);
+                        isToday = day == todayHijri.day && _currentMonth == todayHijri.month && _currentYear == todayHijri.year;
                       }
                     }
+
+                    final isHoliday = day != 0 && widget.highlightHolidays && (() {
+                      if (_isGregorian) {
+                        final cellDate = DateTime(_currentYear, _currentMonth, day);
+                        final cellHijri = HijriGregConverter.gregorianToHijri(cellDate, hijriAdjustment: widget.hijriAdjustment);
+                        return cellHijri.getIslamicHoliday() != null;
+                      } else {
+                        final cellHijri = HijriGregDate(day: day, month: _currentMonth, year: _currentYear);
+                        return cellHijri.getIslamicHoliday() != null;
+                      }
+                    }());
 
                     return GestureDetector(
                       onTap: () => _selectDate(day),
                       child: Container(
-                        margin: EdgeInsets.all(2),
+                        margin: const EdgeInsets.all(2),
                         height: 40,
                         decoration: BoxDecoration(
                           color: isSelected
@@ -312,36 +253,48 @@ class HijriGregDatePickerState extends State<HijriGregDatePicker> {
                               ? Colors.blue.shade100
                               : Colors.transparent,
                           shape: BoxShape.circle,
-                          border: isToday && !isSelected
-                              ? Border.all(color: Colors.blue, width: 2)
-                              : null,
+                          border: isToday && !isSelected ? Border.all(color: Colors.blue, width: 2) : null,
                         ),
                         child: Center(
-                          child: Text(
-                            day == 0 ? '' : day.toString(),
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : isToday
-                                  ? Colors.blue.shade700
-                                  : day == 0
-                                  ? Colors.transparent
-                                  : Colors.black,
-                              fontWeight: isSelected || isToday
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                day == 0 ? '' : day.toString(),
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : isToday
+                                      ? Colors.blue.shade700
+                                      : day == 0
+                                      ? Colors.transparent
+                                      : Colors.black,
+                                  fontWeight: isSelected || isToday ? FontWeight.bold : FontWeight.normal,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              if (isHoliday)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 2),
+                                  width: 4,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? Colors.white : Colors.redAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
                     );
                   }).toList(),
                 );
-              }).toList(),
+              }),
             ],
           ),
 
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
 
           // Action buttons
           Row(
@@ -349,20 +302,12 @@ class HijriGregDatePickerState extends State<HijriGregDatePicker> {
             children: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
+                child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
               ),
               ElevatedButton(
-                onPressed: () {
-                  widget.onDateSelected(_selectedDate);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                ),
-                child: Text('Select'),
+                onPressed: () => widget.onDateSelected(_selectedDate),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                child: const Text('Select'),
               ),
             ],
           ),

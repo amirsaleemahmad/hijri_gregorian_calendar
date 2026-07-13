@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:hijri_gregorian_calendar/hijri_gregorian_calendar.dart';
+import 'calendar_constants.dart';
 
 /// Main calendar screen that displays both Hijri and Gregorian dates
 /// with the ability to switch between them and select dates.
 class HijriGregCalendarScreen extends StatefulWidget {
+  final String language;
+
+  const HijriGregCalendarScreen({Key? key, this.language = 'en'}) : super(key: key);
+
   @override
-  _HijriGregCalendarScreenState createState() =>
-      _HijriGregCalendarScreenState();
+  State<HijriGregCalendarScreen> createState() => _HijriGregCalendarScreenState();
 }
 
 class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
@@ -21,6 +25,7 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
           child: HijriGregDatePicker(
             initialDate: selectedDate,
             isGregorian: showGregorian,
+            language: widget.language,
             onDateSelected: (newDate) {
               setState(() {
                 selectedDate = newDate;
@@ -36,10 +41,11 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final hijriDate = HijriGregConverter.gregorianToHijri(selectedDate);
+    final isAr = widget.language == 'ar';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hijri Gregorian Calendar'),
+        title: Text(isAr ? 'التقويم الهجري والميلادي' : 'Hijri Gregorian Calendar'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
@@ -49,8 +55,8 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
           children: <Widget>[
             // Calendar type indicator
             Container(
-              padding: EdgeInsets.all(20),
-              margin: EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
                 borderRadius: BorderRadius.circular(12),
@@ -59,28 +65,26 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
               child: Column(
                 children: [
                   Text(
-                    'Current Calendar Type',
+                    isAr ? 'نوع التقويم الحالي' : 'Current Calendar Type',
                     style: TextStyle(fontSize: 16, color: Colors.blue.shade700),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
-                    showGregorian ? 'Gregorian' : 'Hijri',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade900,
-                    ),
+                    showGregorian
+                        ? (isAr ? 'ميلادي' : 'Gregorian')
+                        : (isAr ? 'هجري' : 'Hijri'),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blue.shade900),
                   ),
                 ],
               ),
             ),
 
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
 
             // Date display
             Container(
-              padding: EdgeInsets.all(30),
-              margin: EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(30),
+              margin: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -89,8 +93,8 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
                     color: Colors.grey.withValues(alpha: 0.3),
                     spreadRadius: 2,
                     blurRadius: 8,
-                    offset: Offset(0, 3),
-                  ),
+                    offset: const Offset(0, 3),
+                  )
                 ],
               ),
               child: Column(
@@ -99,67 +103,43 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
                   Column(
                     children: [
                       Text(
-                        showGregorian
-                            ? selectedDate.day.toString()
-                            : hijriDate.day.toString(),
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade800,
-                        ),
+                        showGregorian ? selectedDate.day.toString() : hijriDate.day.toString(),
+                        style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
                       ),
                       Text(
                         showGregorian
-                            ? _getGregorianMonthName(selectedDate.month)
-                            : hijriDate.monthNameEnglish,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.blue.shade600,
-                        ),
+                            ? CalendarConstants.getGregorianMonthName(selectedDate.month, language: widget.language)
+                            : (isAr ? hijriDate.monthNameArabic : hijriDate.monthNameEnglish),
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500, color: Colors.blue.shade600),
                       ),
                       Text(
-                        showGregorian
-                            ? selectedDate.year.toString()
-                            : hijriDate.year.toString(),
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.blue.shade600,
-                        ),
+                        showGregorian ? selectedDate.year.toString() : hijriDate.year.toString(),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500, color: Colors.blue.shade600),
                       ),
                     ],
                   ),
 
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                  // Divider
                   Divider(color: Colors.blue.shade200),
 
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
                   // Secondary date (smaller display)
                   Column(
                     children: [
                       Text(
                         showGregorian
-                            ? 'Hijri Equivalent'
-                            : 'Gregorian Equivalent',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
+                            ? (isAr ? 'المعادل الهجري' : 'Hijri Equivalent')
+                            : (isAr ? 'المعادل الميلادي' : 'Gregorian Equivalent'),
+                        style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
                         showGregorian
-                            ? hijriDate.format()
-                            : _formatGregorianDate(selectedDate),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade800,
-                        ),
+                            ? hijriDate.format(useArabicNames: isAr)
+                            : CalendarConstants.formatGregorianDate(selectedDate, language: widget.language),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.grey.shade800),
                       ),
                     ],
                   ),
@@ -167,53 +147,47 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
               ),
             ),
 
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
 
             // Action buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                // Toggle button
                 ElevatedButton.icon(
                   onPressed: () {
                     setState(() {
                       showGregorian = !showGregorian;
                     });
                   },
-                  icon: Icon(Icons.swap_horiz),
+                  icon: const Icon(Icons.swap_horiz),
                   label: Text(
-                    'Switch to ${showGregorian ? 'Hijri' : 'Gregorian'}',
+                    showGregorian
+                        ? (isAr ? 'التحويل إلى هجري' : 'Switch to Hijri')
+                        : (isAr ? 'التحويل إلى ميلادي' : 'Switch to Gregorian'),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
-
-                // Date picker button
                 ElevatedButton.icon(
                   onPressed: _showDatePicker,
-                  icon: Icon(Icons.calendar_today),
-                  label: Text('Select Date'),
+                  icon: const Icon(Icons.calendar_today),
+                  label: Text(isAr ? 'اختر التاريخ' : 'Select Date'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ],
             ),
 
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
 
-            // Today button
             TextButton(
               onPressed: () {
                 setState(() {
@@ -221,7 +195,7 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
                 });
               },
               child: Text(
-                'Go to Today',
+                isAr ? 'الذهاب إلى اليوم' : 'Go to Today',
                 style: TextStyle(fontSize: 16, color: Colors.blue.shade700),
               ),
             ),
@@ -229,27 +203,5 @@ class _HijriGregCalendarScreenState extends State<HijriGregCalendarScreen> {
         ),
       ),
     );
-  }
-
-  String _getGregorianMonthName(int month) {
-    const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return monthNames[month - 1];
-  }
-
-  String _formatGregorianDate(DateTime date) {
-    return '${date.day} ${_getGregorianMonthName(date.month)} ${date.year}';
   }
 }

@@ -19,6 +19,8 @@ A comprehensive Flutter package for converting between Hijri (Islamic) and Grego
 
 - ✅ **Three Beautiful UI Designs**: V1 (scroll picker), V2 (calendar grid + time picker), and V3 (modern card-based design with segmented toggle)
 - ✅ **High Performance**: Optimized caching system eliminates lag when switching calendars
+- ✅ **Dynamic Hijri Adjustment**: Offset dates by ±1 or ±2 days to align with local moon sighting declarations
+- ✅ **Islamic Holiday Highlights**: Automatically highlight religious events (e.g. Ramadan, Eid) with indicator dots
 - ✅ Accurate Hijri-Gregorian date conversion using astronomical calculations
 - ✅ Interactive date picker with month navigation
 - ✅ **Time Selection**: Predefined time slots in V2 design
@@ -36,7 +38,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  hijri_gregorian_calendar: ^0.1.1
+  hijri_gregorian_calendar: ^0.1.4
 ```
 
 Then run:
@@ -281,15 +283,16 @@ The package provides a clean, Material Design-compliant interface with:
 - `String monthNameArabic` - Month name in Arabic
 
 #### Methods
-- `DateTime toGregorian()` - Convert to Gregorian date
+- `DateTime toGregorian({int hijriAdjustment = 0})` - Convert to Gregorian date
+- `String? getIslamicHoliday()` - Returns the name of the Islamic holiday if the date is one, otherwise null
 - `String format({bool useArabicNames = false})` - Format as readable string
 - `String toString()` - String representation
 
 ### HijriGregConverter Class
 
 #### Static Methods
-- `HijriGregDate gregorianToHijri(DateTime gregorianDate)` - Convert Gregorian to Hijri
-- `DateTime hijriToGregorian(HijriGregDate hijriDate)` - Convert Hijri to Gregorian
+- `HijriGregDate gregorianToHijri(DateTime gregorianDate, {int hijriAdjustment = 0})` - Convert Gregorian to Hijri
+- `DateTime hijriToGregorian(HijriGregDate hijriDate, {int hijriAdjustment = 0})` - Convert Hijri to Gregorian
 - `bool isHijriLeapYear(int year)` - Check if Hijri year is leap year
 - `int getHijriMonthLength(int year, int month)` - Get days in Hijri month
 
@@ -357,6 +360,22 @@ Aamir Saleem Ahmad - amirsaleemahmad@gmail.com
 - Stability fixes
 - Added font style support based on language.
 - added Design param DesignType (V1, V2)
+
+### 0.1.4
+- Fixed all garbled Arabic texts across all sheet designs (V1-V5).
+- Corrected Arabic day names list ordering (aligned to standard Sunday-to-Saturday sequence).
+- Added translation support to `HijriGregDatePicker`, `HijriGregCalendarScreen`, and `HijriGregCalendarApp`.
+- Translated example app homepage dynamically based on active language.
+- added hijri adjustment and islamic holidays.
+
+### 0.1.3
+- Added `hijriAdjustment` parameter to dynamically offset dates by ±1 or ±2 days.
+- Added `highlightHolidays` option to visually mark Islamic holiday dates on the calendar grids.
+- Added `getIslamicHoliday()` helper to `HijriGregDate` to retrieve holiday names.
+
+### 0.1.2
+- Fixed Arabic weekday headers order.
+- Fixed 1-day ahead Hijri epoch date offset.
 
 ### 0.1.1
 - added design updates
