@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 0.1.5 - 2026-08-04
+- Fix RTL/Arabic layout & font rendering bugs (stability)
+- Expose start-of-week setting + hijriAdjustment quick UI (UX)
+- Add dark mode / theming support (visual)
+- Improve caching & reduce conversion calls further (performance)
+- Add unit tests for conversions + widget tests for pickers (quality)
+- Expand i18n: externalize strings, add Arabic locale files (localization)
+
 ## [0.1.4] - 2026-07-13
 ### Fixed
 - **Arabic Translation Correction**: Resolved Mojibake characters in Arabic translations inside all bottom sheet designs (e.g. converting garbled text to proper Arabic strings like "اختر التاريخ", "هجري", "ميلادي", etc.).

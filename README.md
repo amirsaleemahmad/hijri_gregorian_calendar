@@ -15,6 +15,12 @@ and the Flutter guide for
 
 A comprehensive Flutter package for converting between Hijri (Islamic) and Gregorian calendars with beautiful UI components. **All classes are prefixed with `HijriGreg` to avoid conflicts with other date packages.**
 
+## Support the Project
+
+If this package helps you, consider supporting its continued development:
+
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8Y824GXT3)
+
 ## Features
 
 - ✅ **Three Beautiful UI Designs**: V1 (scroll picker), V2 (calendar grid + time picker), and V3 (modern card-based design with segmented toggle)
@@ -346,20 +352,13 @@ Aamir Saleem Ahmad - amirsaleemahmad@gmail.com
 
 ## Changelog
 
-### 0.0.1
-
-### 0.0.4
-- Fixed design updates
-- Scrollable actions fixed
-- Stability fixes
-- Added font style support based on language
-
-### 0.1.0
-- added design updates
-- Grid Design fixes
-- Stability fixes
-- Added font style support based on language.
-- added Design param DesignType (V1, V2)
+### 0.1.5
+- Fix RTL/Arabic layout & font rendering bugs (stability)
+- Expose start-of-week setting + hijriAdjustment quick UI (UX)
+- Add dark mode / theming support (visual)
+- Improve caching & reduce conversion calls further (performance)
+- Add unit tests for conversions + widget tests for pickers (quality)
+- Expand i18n: externalize strings, add Arabic locale files (localization)
 
 ### 0.1.4
 - Fixed all garbled Arabic texts across all sheet designs (V1-V5).
@@ -383,3 +382,18 @@ Aamir Saleem Ahmad - amirsaleemahmad@gmail.com
 - Stability fixes
 - Added font style support based on language.
 - added time Slots
+
+### 0.1.0
+- added design updates
+- Grid Design fixes
+- Stability fixes
+- Added font style support based on language.
+- added Design param DesignType (V1, V2)
+
+### 0.0.4
+- Fixed design updates
+- Scrollable actions fixed
+- Stability fixes
+- Added font style support based on language
+
+### 0.0.1

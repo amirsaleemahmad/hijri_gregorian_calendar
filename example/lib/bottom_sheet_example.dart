@@ -276,7 +276,7 @@ class _ExampleHomePageState extends State<ExampleHomePage> {
                         Switch(
                           value: highlightHolidays,
                           onChanged: (v) => setState(() => highlightHolidays = v),
-                          activeColor: Colors.teal,
+                          activeThumbColor: Colors.teal,
                         ),
                       ],
                     ),

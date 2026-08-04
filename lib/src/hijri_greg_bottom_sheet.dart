@@ -208,7 +208,7 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                           try {
                             final newHijriDate = HijriGregDate(year: currentHijriDate.year, month: currentHijriDate.month, day: index + 1);
                             selectedDate = _hijriToGregorian(newHijriDate);
-                          } catch (e) {}
+                          } catch (e) { /* ignore */ }
                         }
                       });
                     },
@@ -288,7 +288,7 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                             try {
                               final newHijriDate = HijriGregDate(year: currentHijriDate.year, month: index + 1, day: 1);
                               selectedDate = _hijriToGregorian(newHijriDate);
-                            } catch (e2) {}
+                            } catch (e2) { /* ignore */ }
                           }
                         }
                       });
@@ -358,7 +358,7 @@ class _HijriGregBottomSheetState extends State<HijriGregBottomSheet> {
                             try {
                               final newHijriDate = HijriGregDate(year: minYear + index, month: currentHijriDate.month, day: 1);
                               selectedDate = _hijriToGregorian(newHijriDate);
-                            } catch (e2) {}
+                            } catch (e2) { /* ignore */ }
                           }
                         }
                       });
@@ -1202,7 +1202,7 @@ class _HijriGregBottomSheetV2State extends State<HijriGregBottomSheetV2> {
         try {
           final newHijriDate = HijriGregDate(day: 1, month: newMonth, year: newYear);
           currentMonth = _hijriToGregorian(newHijriDate);
-        } catch (e) {}
+        } catch (e) { /* ignore */ }
       }
       _updateCachedValues();
     });
@@ -1952,7 +1952,7 @@ class _HijriGregBottomSheetV3State extends State<HijriGregBottomSheetV3> {
         try {
           final newHijriDate = HijriGregDate(day: 1, month: newMonth, year: newYear);
           currentMonth = _hijriToGregorian(newHijriDate);
-        } catch (e) {}
+        } catch (e) { /* ignore */ }
       }
       _updateCachedValues();
     });
@@ -2296,7 +2296,7 @@ class _HijriGregBottomSheetV4State extends State<HijriGregBottomSheetV4> {
         }
         try {
           currentMonth = _hijriToGregorian(HijriGregDate(day: 1, month: newMonth, year: newYear));
-        } catch (_) {}
+        } catch (_) { /* ignore */ }
       }
     });
   }
@@ -2604,7 +2604,7 @@ class _HijriGregBottomSheetV5State extends State<HijriGregBottomSheetV5> {
         }
         try {
           currentMonth = _hijriToGregorian(HijriGregDate(day: 1, month: nm, year: ny));
-        } catch (_) {}
+        } catch (_) { /* ignore */ }
       }
     });
   }

@@ -5,16 +5,48 @@ import 'hijri_greg_date.dart';
 class HijriGregConverter {
   static const int _hijriEpoch = 1948440; // Julian day of Hijri epoch (July 16, 622 CE)
 
+  // Simple caches to reduce repeated computation. Keys are Julian day numbers.
+  static final Map<int, HijriGregDate> _gregToHijriCache = {};
+  static final Map<int, DateTime> _hijriToGregCache = {};
+  static const int _cacheLimit = 500;
+
+  static void _addToGregCache(int julian, HijriGregDate value) {
+    if (_gregToHijriCache.length > _cacheLimit) {
+      _gregToHijriCache.remove(_gregToHijriCache.keys.first);
+    }
+    _gregToHijriCache[julian] = value;
+  }
+
+  static void _addToHijriCache(int julian, DateTime value) {
+    if (_hijriToGregCache.length > _cacheLimit) {
+      _hijriToGregCache.remove(_hijriToGregCache.keys.first);
+    }
+    _hijriToGregCache[julian] = value;
+  }
+
   /// Converts a Gregorian DateTime to HijriGregDate
   static HijriGregDate gregorianToHijri(DateTime gregorianDate, {int hijriAdjustment = 0}) {
-    int julianDay = _gregorianToJulian(gregorianDate) + hijriAdjustment;
-    return _julianToHijri(julianDay);
+    int baseJulian = _gregorianToJulian(gregorianDate);
+    int julianDay = baseJulian + hijriAdjustment;
+
+    if (_gregToHijriCache.containsKey(julianDay)) {
+      return _gregToHijriCache[julianDay]!;
+    }
+
+    final result = _julianToHijri(julianDay);
+    _addToGregCache(julianDay, result);
+    return result;
   }
 
   /// Converts a HijriGregDate to Gregorian DateTime
   static DateTime hijriToGregorian(HijriGregDate hijriDate, {int hijriAdjustment = 0}) {
-    int julianDay = _hijriToJulian(hijriDate) - hijriAdjustment;
-    return _julianToGregorian(julianDay);
+    int julian = _hijriToJulian(hijriDate) - hijriAdjustment;
+    if (_hijriToGregCache.containsKey(julian)) {
+      return _hijriToGregCache[julian]!;
+    }
+    final result = _julianToGregorian(julian);
+    _addToHijriCache(julian, result);
+    return result;
   }
 
   /// Converts Gregorian date to Julian day number
